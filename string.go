@@ -6,7 +6,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/grafana/sobek/unistring"
+	"github.com/ad3n/sobek/unistring"
 )
 
 const (
@@ -131,9 +131,9 @@ func (r *Runtime) createStringIterator(s String) Value {
 
 type stringObject struct {
 	baseObject
+	lengthProp valueProperty
 	value      String
 	length     int
-	lengthProp valueProperty
 }
 
 func newStringValue(s string) String {

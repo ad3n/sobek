@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/grafana/sobek/unistring"
+	"github.com/ad3n/sobek/unistring"
 )
 
 type resultType uint8
@@ -97,8 +97,8 @@ type classFuncObject struct {
 }
 
 type methodFuncObject struct {
-	baseJsFuncObject
 	homeObject *Object
+	baseJsFuncObject
 }
 
 type generatorMethodFuncObject struct {
@@ -110,9 +110,9 @@ type asyncMethodFuncObject struct {
 }
 
 type arrowFuncObject struct {
-	baseJsFuncObject
-	funcObj   *Object
 	newTarget Value
+	funcObj   *Object
+	baseJsFuncObject
 }
 
 type asyncArrowFuncObject struct {
@@ -156,8 +156,8 @@ const (
 
 type generatorObject struct {
 	baseObject
-	gen       generator
 	delegated *iteratorRecord
+	gen       generator
 	state     generatorState
 }
 
@@ -691,10 +691,10 @@ func (f *asyncFuncObject) vmCall(vm *vm, n int) {
 }
 
 type asyncRunner struct {
-	gen        generator
 	promiseCap *promiseCapability
 	f          *Object
 	vmCall     func(*vm, int)
+	gen        generator
 }
 
 func (ar *asyncRunner) onFulfilled(call FunctionCall) Value {
@@ -760,9 +760,10 @@ func (ar *asyncRunner) start(nArgs int) {
 }
 
 type generator struct {
-	ctx       execCtx
-	vm        *vm
 	returning Value
+
+	vm  *vm
+	ctx execCtx
 
 	tryStackLen, iterStackLen, refStackLen uint32
 }

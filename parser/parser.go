@@ -2,7 +2,7 @@
 Package parser implements a parser for JavaScript.
 
 	import (
-	    "github.com/grafana/sobek/parser"
+	    "github.com/ad3n/sobek/parser"
 	)
 
 Parse and return an AST
@@ -38,10 +38,10 @@ import (
 	"io"
 	"os"
 
-	"github.com/grafana/sobek/ast"
-	"github.com/grafana/sobek/file"
-	"github.com/grafana/sobek/token"
-	"github.com/grafana/sobek/unistring"
+	"github.com/ad3n/sobek/ast"
+	"github.com/ad3n/sobek/file"
+	"github.com/ad3n/sobek/token"
+	"github.com/ad3n/sobek/unistring"
 )
 
 // A Mode value is a set of flags (or 0). They control optional parser functionality.
@@ -52,9 +52,9 @@ const (
 )
 
 type options struct {
+	sourceMapLoader   func(path string) ([]byte, error)
 	module            bool
 	disableSourceMaps bool
-	sourceMapLoader   func(path string) ([]byte, error)
 }
 
 // Option represents one of the options for the parser to use in the Parse methods. Currently supported are:
@@ -83,29 +83,16 @@ func WithSourceMapLoader(loader func(path string) ([]byte, error)) Option {
 }
 
 type _parser struct {
-	str    string
-	length int
-	base   int
+	opts options
 
-	chr       rune // The current character
-	chrOffset int  // The offset of current character
-	offset    int  // The offset after current character (may be greater than 1)
+	scope *_scope
 
-	idx            file.Idx    // The index of token
-	prevTokenEnd   file.Idx    // The index right after the previous token
-	token          token.Token // The token
-	literal        string      // The literal of the token, if any
-	parsedLiteral  unistring.String
-	sloppyLiteral  bool                  // The string literal token has a legacy octal or \8, \9 escape sequence
-	numLiteralKind ast.NumberLiteralKind // The lexical form of the current numeric literal token, if any
-
-	scope             *_scope
-	insertSemicolon   bool // If we see a newline, then insert an implicit semicolon
-	implicitSemicolon bool // An implicit semicolon exists
+	file          *file.File
+	str           string
+	literal       string // The literal of the token, if any
+	parsedLiteral unistring.String
 
 	errors ErrorList
-
-	depth int
 
 	recover struct {
 		// Scratch when trying to seek to the next statement, etc.
@@ -113,10 +100,27 @@ type _parser struct {
 		count int
 	}
 
-	mode Mode
-	opts options
+	length int
+	base   int
 
-	file *file.File
+	chrOffset int // The offset of current character
+	offset    int // The offset after current character (may be greater than 1)
+
+	idx          file.Idx    // The index of token
+	prevTokenEnd file.Idx    // The index right after the previous token
+	token        token.Token // The token
+
+	depth int
+
+	mode Mode
+
+	chr            rune                  // The current character
+	sloppyLiteral  bool                  // The string literal token has a legacy octal or \8, \9 escape sequence
+	numLiteralKind ast.NumberLiteralKind // The lexical form of the current numeric literal token, if any
+
+	insertSemicolon   bool // If we see a newline, then insert an implicit semicolon
+	implicitSemicolon bool // An implicit semicolon exists
+
 }
 
 func _newParser(filename, src string, base int, opts ...Option) *_parser {

@@ -14,7 +14,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/grafana/sobek/unistring"
+	"github.com/ad3n/sobek/unistring"
 )
 
 const (
@@ -29,13 +29,14 @@ const (
 type valueStack []Value
 
 type stash struct {
-	values    []Value
-	extraArgs []Value
-	names     map[unistring.String]uint32
-	obj       *Object
+	names map[unistring.String]uint32
+	obj   *Object
 
 	outer *stash
 	vm    *vm
+
+	values    []Value
+	extraArgs []Value
 
 	// If this is a top-level function stash, sets the type of the function. If set, dynamic var declarations
 	// created by direct eval go here.
@@ -56,21 +57,22 @@ type tryFrame struct {
 	// holds an uncaught exception for the 'finally' block
 	exception *Exception
 
-	callStackLen, iterLen, refLen uint32
-
-	sp      int32
 	stash   *stash
 	privEnv *privateEnv
+
+	callStackLen, iterLen, refLen uint32
+
+	sp int32
 
 	catchPos, finallyPos, finallyRet int32
 }
 
 type execCtx struct {
-	context
 	stack     []Value
 	tryStack  []tryFrame
 	iterStack []iterStackItem
 	refStack  []ref
+	context
 }
 
 func (vm *vm) suspend(ectx *execCtx, tryStackLen, iterStackLen, refStackLen uint32) {
@@ -132,8 +134,8 @@ type ref interface {
 }
 
 type stashRef struct {
-	n   unistring.String
 	v   *[]Value
+	n   unistring.String
 	idx int
 }
 
@@ -261,9 +263,9 @@ func (r *objRef) refname() unistring.String {
 }
 
 type objStrRef struct {
+	this    Value
 	base    *Object
 	name    unistring.String
-	this    Value
 	strict  bool
 	binding bool
 }
@@ -410,30 +412,32 @@ func (r *unresolvedRef) refname() unistring.String {
 }
 
 type vm struct {
-	r            *Runtime
-	prg          *Program
-	pc           int
-	stack        valueStack
-	sp, sb, args int
-
-	stash     *stash
-	privEnv   *privateEnv
-	callStack []context
-	iterStack []iterStackItem
-	refStack  []ref
-	tryStack  []tryFrame
 	newTarget Value
 	result    Value
 
-	maxCallStackSize int
+	interruptVal any
+	r            *Runtime
+	prg          *Program
 
-	interrupted   uint32
-	interruptVal  any
-	interruptLock sync.Mutex
+	stash   *stash
+	privEnv *privateEnv
 
 	curAsyncRunner *asyncRunner
 
-	profTracker *profTracker
+	profTracker  *profTracker
+	stack        valueStack
+	callStack    []context
+	iterStack    []iterStackItem
+	refStack     []ref
+	tryStack     []tryFrame
+	pc           int
+	sp, sb, args int
+
+	maxCallStackSize int
+
+	interruptLock sync.Mutex
+
+	interrupted uint32
 }
 
 type instruction interface {
@@ -1288,8 +1292,8 @@ func (i importNamespace) exec(vm *vm) {
 }
 
 type export struct {
-	idx      uint32
 	callback func(*vm, func() Value)
+	idx      uint32
 }
 
 func (e export) exec(vm *vm) {
@@ -1307,8 +1311,8 @@ func (e export) exec(vm *vm) {
 }
 
 type exportLex struct {
-	idx      uint32
 	callback func(*vm, func() Value)
+	idx      uint32
 }
 
 func (e exportLex) exec(vm *vm) {
@@ -3018,8 +3022,8 @@ func (s initStash) exec(vm *vm) {
 }
 
 type initIndirect struct {
-	idx    uint32
 	getter func(vm *vm) Value
+	idx    uint32
 }
 
 func (s initIndirect) exec(vm *vm) {
@@ -4166,8 +4170,8 @@ func (n *loadModulePromise) exec(vm *vm) {
 }
 
 type newModule struct {
-	newAsyncFunc
 	moduleCore ModuleRecord
+	newAsyncFunc
 }
 
 func (n *newModule) exec(vm *vm) {

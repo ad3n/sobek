@@ -1,6 +1,6 @@
 package sobek
 
-import "github.com/grafana/sobek/unistring"
+import "github.com/ad3n/sobek/unistring"
 
 type argumentsObject struct {
 	baseObject

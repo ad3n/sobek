@@ -14,10 +14,10 @@ import (
 
 	"golang.org/x/text/unicode/rangetable"
 
-	"github.com/grafana/sobek/ast"
-	"github.com/grafana/sobek/file"
-	"github.com/grafana/sobek/token"
-	"github.com/grafana/sobek/unistring"
+	"github.com/ad3n/sobek/ast"
+	"github.com/ad3n/sobek/file"
+	"github.com/ad3n/sobek/token"
+	"github.com/ad3n/sobek/unistring"
 )
 
 var (
@@ -191,16 +191,16 @@ func isLineTerminator(chr rune) bool {
 }
 
 type parserState struct {
-	idx, prevTokenEnd                  file.Idx
-	tok                                token.Token
 	literal                            string
 	parsedLiteral                      unistring.String
+	idx, prevTokenEnd                  file.Idx
+	tok                                token.Token
+	chrOffset, offset                  int
+	errorCount                         int
+	chr                                rune
 	sloppyLiteral                      bool
 	numLiteralKind                     ast.NumberLiteralKind
 	implicitSemicolon, insertSemicolon bool
-	chr                                rune
-	chrOffset, offset                  int
-	errorCount                         int
 }
 
 func (self *_parser) mark(state *parserState) *parserState {

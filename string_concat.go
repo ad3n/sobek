@@ -7,7 +7,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/grafana/sobek/unistring"
+	"github.com/ad3n/sobek/unistring"
 )
 
 const concatThreshold = 32

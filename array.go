@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"strconv"
 
-	"github.com/grafana/sobek/unistring"
+	"github.com/ad3n/sobek/unistring"
 )
 
 type arrayIterObject struct {
@@ -69,11 +69,11 @@ func (r *Runtime) createArrayIterator(iterObj *Object, kind iterationKind) Value
 
 type arrayObject struct {
 	baseObject
+	lengthProp     valueProperty
 	values         []Value
-	length         uint32
 	objCount       int
 	propValueCount int
-	lengthProp     valueProperty
+	length         uint32
 }
 
 func (a *arrayObject) init() {

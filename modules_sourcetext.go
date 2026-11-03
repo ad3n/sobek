@@ -5,8 +5,8 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/grafana/sobek/ast"
-	"github.com/grafana/sobek/parser"
+	"github.com/ad3n/sobek/ast"
+	"github.com/ad3n/sobek/parser"
 )
 
 var (
@@ -83,18 +83,19 @@ func (s *SourceTextModuleInstance) HasTLA() bool {
 type SourceTextModuleRecord struct {
 	body *ast.Program
 	p    *Program
-	// context
-	// importmeta
-	hasTLA                bool
+
+	hostResolveImportedModule HostResolveImportedModuleFunc
+
+	once                  *sync.Once
 	requestedModules      []string
 	importEntries         []importEntry
 	localExportEntries    []exportEntry
 	indirectExportEntries []exportEntry
 	starExportEntries     []exportEntry
 
-	hostResolveImportedModule HostResolveImportedModuleFunc
-
-	once *sync.Once
+	// context
+	// importmeta
+	hasTLA bool
 }
 
 type importEntry struct {

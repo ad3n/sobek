@@ -1,4 +1,4 @@
-module github.com/grafana/sobek
+module github.com/ad3n/sobek
 
 go 1.27.3
 

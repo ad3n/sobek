@@ -5,10 +5,10 @@ import (
 	"slices"
 	"sort"
 
-	"github.com/grafana/sobek/ast"
-	"github.com/grafana/sobek/file"
-	"github.com/grafana/sobek/token"
-	"github.com/grafana/sobek/unistring"
+	"github.com/ad3n/sobek/ast"
+	"github.com/ad3n/sobek/file"
+	"github.com/ad3n/sobek/token"
+	"github.com/ad3n/sobek/unistring"
 )
 
 type blockType int
@@ -47,8 +47,8 @@ const (
 const thisBindingName = " this" // must not be a valid identifier
 
 type CompilerError struct {
-	Message string
 	File    *file.File
+	Message string
 	Offset  int
 }
 
@@ -69,13 +69,13 @@ type srcMapItem struct {
 // This representation is not linked to a runtime in any way and can be used concurrently.
 // It is always preferable to use a Program over a string when running code as it skips the compilation step.
 type Program struct {
-	code []instruction
+	scriptOrModule any
+	src            *file.File
 
 	funcName unistring.String
-	src      *file.File
-	srcMap   []srcMapItem
+	code     []instruction
 
-	scriptOrModule any
+	srcMap []srcMapItem
 }
 
 type compiler struct {
@@ -88,14 +88,14 @@ type compiler struct {
 
 	classScope *classScope
 
-	enumGetExpr compiledEnumGetExpr
-
 	evalVM *vm // VM used to evaluate constant expressions
 	ctxVM  *vm // VM in which an eval() code is compiled
 
-	codeScratchpad []instruction
-
 	stringCache map[unistring.String]Value
+
+	enumGetExpr compiledEnumGetExpr
+
+	codeScratchpad []instruction
 }
 
 func (c *compiler) getScriptOrModule() any {
@@ -107,9 +107,9 @@ func (c *compiler) getScriptOrModule() any {
 
 type binding struct {
 	scope        *scope
-	name         unistring.String
 	accessPoints map[*scope]*[]int
 	getIndirect  func(vm *vm) Value
+	name         unistring.String
 	isConst      bool
 	isStrict     bool
 	isArg        bool
@@ -336,13 +336,13 @@ type scope struct {
 }
 
 type block struct {
-	typ        blockType
-	label      unistring.String
-	cont       int
-	breaks     []int
-	conts      []int
 	outer      *block
 	breaking   *block // set when the 'finally' block is an empty break statement sequence
+	label      unistring.String
+	breaks     []int
+	conts      []int
+	typ        blockType
+	cont       int
 	needResult bool
 	async      bool // for-await loop
 }
@@ -1630,9 +1630,9 @@ type classScope struct {
 	c            *compiler
 	privateNames map[unistring.String]*privateName
 
-	instanceEnv, staticEnv privateEnvRegistry
-
 	outer *classScope
+
+	instanceEnv, staticEnv privateEnvRegistry
 }
 
 func (r *privateEnvRegistry) createPrivateMethodId(name unistring.String) int {

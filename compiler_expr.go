@@ -3,10 +3,10 @@ package sobek
 import (
 	"math/big"
 
-	"github.com/grafana/sobek/ast"
-	"github.com/grafana/sobek/file"
-	"github.com/grafana/sobek/token"
-	"github.com/grafana/sobek/unistring"
+	"github.com/ad3n/sobek/ast"
+	"github.com/ad3n/sobek/file"
+	"github.com/ad3n/sobek/token"
+	"github.com/ad3n/sobek/unistring"
 )
 
 type compiledExpr interface {
@@ -25,9 +25,10 @@ type compiledExprOrRef interface {
 }
 
 type compiledCallExpr struct {
-	baseCompiledExpr
-	args   []compiledExpr
 	callee compiledExpr
+
+	baseCompiledExpr
+	args []compiledExpr
 
 	isVariadic bool
 }
@@ -37,23 +38,23 @@ type compiledNewExpr struct {
 }
 
 type compiledObjectLiteral struct {
-	baseCompiledExpr
 	expr *ast.ObjectLiteral
+	baseCompiledExpr
 }
 
 type compiledArrayLiteral struct {
-	baseCompiledExpr
 	expr *ast.ArrayLiteral
+	baseCompiledExpr
 }
 
 type compiledRegexpLiteral struct {
-	baseCompiledExpr
 	expr *ast.RegExpLiteral
+	baseCompiledExpr
 }
 
 type compiledLiteral struct {
-	baseCompiledExpr
 	val Value
+	baseCompiledExpr
 }
 
 type compiledTemplateLiteral struct {
@@ -64,19 +65,19 @@ type compiledTemplateLiteral struct {
 }
 
 type compiledAssignExpr struct {
-	baseCompiledExpr
 	left, right compiledExpr
-	operator    token.Token
+	baseCompiledExpr
+	operator token.Token
 }
 
 type compiledObjectAssignmentPattern struct {
-	baseCompiledExpr
 	expr *ast.ObjectPattern
+	baseCompiledExpr
 }
 
 type compiledArrayAssignmentPattern struct {
-	baseCompiledExpr
 	expr *ast.ArrayPattern
+	baseCompiledExpr
 }
 
 type baseCompiledExpr struct {
@@ -90,13 +91,13 @@ type compiledIdentifierExpr struct {
 }
 
 type compiledAwaitExpression struct {
-	baseCompiledExpr
 	arg compiledExpr
+	baseCompiledExpr
 }
 
 type compiledYieldExpression struct {
+	arg compiledExpr
 	baseCompiledExpr
-	arg      compiledExpr
 	delegate bool
 }
 
@@ -114,14 +115,14 @@ const (
 )
 
 type compiledFunctionLiteral struct {
+	name          *ast.Identifier
+	parameterList *ast.ParameterList
+	strict        *ast.StringLiteral
 	baseCompiledExpr
-	name            *ast.Identifier
-	parameterList   *ast.ParameterList
-	body            []ast.Statement
 	source          string
-	declarationList []*ast.VariableDeclaration
 	lhsName         unistring.String
-	strict          *ast.StringLiteral
+	body            []ast.Statement
+	declarationList []*ast.VariableDeclaration
 	homeObjOffset   uint32
 	typ             funcType
 	isExpr          bool
@@ -130,8 +131,8 @@ type compiledFunctionLiteral struct {
 }
 
 type compiledBracketExpr struct {
-	baseCompiledExpr
 	left, member compiledExpr
+	baseCompiledExpr
 }
 
 type compiledThisExpr struct {
@@ -155,36 +156,36 @@ type compiledSequenceExpr struct {
 }
 
 type compiledUnaryExpr struct {
+	operand compiledExpr
 	baseCompiledExpr
-	operand  compiledExpr
 	operator token.Token
 	postfix  bool
 }
 
 type compiledConditionalExpr struct {
-	baseCompiledExpr
 	test, consequent, alternate compiledExpr
+	baseCompiledExpr
 }
 
 type compiledLogicalOr struct {
-	baseCompiledExpr
 	left, right compiledExpr
+	baseCompiledExpr
 }
 
 type compiledCoalesce struct {
-	baseCompiledExpr
 	left, right compiledExpr
+	baseCompiledExpr
 }
 
 type compiledLogicalAnd struct {
-	baseCompiledExpr
 	left, right compiledExpr
+	baseCompiledExpr
 }
 
 type compiledBinaryExpr struct {
-	baseCompiledExpr
 	left, right compiledExpr
-	operator    token.Token
+	baseCompiledExpr
+	operator token.Token
 }
 
 type compiledEnumGetExpr struct {
@@ -192,18 +193,18 @@ type compiledEnumGetExpr struct {
 }
 
 type compiledSpreadCallArgument struct {
-	baseCompiledExpr
 	expr compiledExpr
+	baseCompiledExpr
 }
 
 type compiledOptionalChain struct {
-	baseCompiledExpr
 	expr compiledExpr
+	baseCompiledExpr
 }
 
 type compiledOptional struct {
-	baseCompiledExpr
 	expr compiledExpr
+	baseCompiledExpr
 }
 type compiledDynamicImport struct {
 	baseCompiledExpr
@@ -761,8 +762,8 @@ func (e *compiledPrivateDotExpr) emitRef() {
 }
 
 type compiledSuperBracketExpr struct {
-	baseCompiledExpr
 	member compiledExpr
+	baseCompiledExpr
 }
 
 func (e *compiledSuperBracketExpr) emitGetter(putOnStack bool) {
@@ -1770,13 +1771,13 @@ func (c *compiler) compileFunctionLiteral(v *ast.FunctionLiteral, isExpr bool) *
 }
 
 type compiledClassLiteral struct {
-	baseCompiledExpr
-	name       *ast.Identifier
 	superClass compiledExpr
-	body       []ast.ClassElement
-	lhsName    unistring.String
-	source     string
-	isExpr     bool
+	name       *ast.Identifier
+	baseCompiledExpr
+	lhsName unistring.String
+	source  string
+	body    []ast.ClassElement
+	isExpr  bool
 }
 
 func (c *compiler) processKey(expr ast.Expression) (val unistring.String, computed bool) {
@@ -1803,10 +1804,10 @@ func (e *compiledClassLiteral) processClassKey(expr ast.Expression) (privateName
 }
 
 type clsElement struct {
-	key         unistring.String
-	privateName *privateName
 	initializer compiledExpr
+	privateName *privateName
 	body        *compiledFunctionLiteral
+	key         unistring.String
 	computed    bool
 }
 
@@ -2793,9 +2794,9 @@ func (c *compiler) compileBinaryExpression(v *ast.BinaryExpression) compiledExpr
 }
 
 type compiledPrivateIn struct {
-	baseCompiledExpr
-	id    unistring.String
 	right compiledExpr
+	baseCompiledExpr
+	id unistring.String
 }
 
 func (e *compiledPrivateIn) emitGetter(putOnStack bool) {
@@ -3448,9 +3449,9 @@ func (e *compiledArrayAssignmentPattern) emitSetter(valueExpr compiledExpr, putO
 }
 
 type compiledPatternInitExpr struct {
-	baseCompiledExpr
-	emitSrc func()
 	def     compiledExpr
+	emitSrc func()
+	baseCompiledExpr
 }
 
 func (e *compiledPatternInitExpr) emitGetter(putOnStack bool) {
@@ -3486,9 +3487,9 @@ func (c *compiler) compilePatternInitExpr(emitSrc func(), def ast.Expression, id
 }
 
 type compiledEmitterExpr struct {
-	baseCompiledExpr
 	emitter      func()
 	namedEmitter func(name unistring.String)
+	baseCompiledExpr
 }
 
 func (e *compiledEmitterExpr) emitGetter(putOnStack bool) {

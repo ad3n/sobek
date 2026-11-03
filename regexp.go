@@ -8,7 +8,7 @@ import (
 
 	"github.com/ad3n/regexp2/v2"
 
-	"github.com/grafana/sobek/unistring"
+	"github.com/ad3n/sobek/unistring"
 )
 
 type regexp2MatchCache struct {
@@ -26,9 +26,8 @@ type regexp2Wrapper struct {
 
 // Not goroutine-safe. Use regexpPattern.clone()
 type regexpPattern struct {
+	regexp2Wrapper                                         *regexp2Wrapper
 	global, ignoreCase, multiline, dotAll, sticky, unicode bool
-
-	regexp2Wrapper *regexp2Wrapper
 }
 
 type regexpResult struct {

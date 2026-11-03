@@ -10,8 +10,8 @@ import (
 	"sync/atomic"
 	"unsafe"
 
-	"github.com/grafana/sobek/ftoa"
-	"github.com/grafana/sobek/unistring"
+	"github.com/ad3n/sobek/ftoa"
+	"github.com/ad3n/sobek/unistring"
 )
 
 var (
@@ -133,12 +133,12 @@ type memberUnresolved struct {
 
 type valueProperty struct {
 	value        Value
+	getterFunc   *Object
+	setterFunc   *Object
 	writable     bool
 	configurable bool
 	enumerable   bool
 	accessor     bool
-	getterFunc   *Object
-	setterFunc   *Object
 }
 
 var (

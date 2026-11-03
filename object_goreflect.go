@@ -6,8 +6,8 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/grafana/sobek/parser"
-	"github.com/grafana/sobek/unistring"
+	"github.com/ad3n/sobek/parser"
+	"github.com/ad3n/sobek/unistring"
 )
 
 // JsonEncodable allows custom JSON encoding by JSON.stringify()
@@ -103,18 +103,18 @@ func copyReflectValueWrapper(w reflectValueWrapper) {
 
 type objectGoReflect struct {
 	baseObject
-	origValue, fieldsValue reflect.Value
 
 	fieldsInfo  *reflectFieldsInfo
 	methodsInfo *reflectMethodsInfo
-
-	methodsValue reflect.Value
 
 	valueCache map[string]reflectValueWrapper
 
 	toString, valueOf func() Value
 
-	toJson func() any
+	toJson                 func() any
+	origValue, fieldsValue reflect.Value
+
+	methodsValue reflect.Value
 }
 
 func (o *objectGoReflect) init() {

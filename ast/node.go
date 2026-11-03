@@ -9,9 +9,9 @@ node types are concerned) and may change in the future.
 package ast
 
 import (
-	"github.com/grafana/sobek/file"
-	"github.com/grafana/sobek/token"
-	"github.com/grafana/sobek/unistring"
+	"github.com/ad3n/sobek/file"
+	"github.com/ad3n/sobek/token"
+	"github.com/ad3n/sobek/unistring"
 )
 
 type PropertyKind string
@@ -72,33 +72,33 @@ type (
 	}
 
 	YieldExpression struct {
-		Yield    file.Idx
 		Argument Expression
+		Yield    file.Idx
 		Delegate bool
 	}
 
 	AwaitExpression struct {
-		Await    file.Idx
 		Argument Expression
+		Await    file.Idx
 	}
 
 	ArrayLiteral struct {
+		Value        []Expression
 		LeftBracket  file.Idx
 		RightBracket file.Idx
-		Value        []Expression
 	}
 
 	ArrayPattern struct {
+		Rest         Expression
+		Elements     []Expression
 		LeftBracket  file.Idx
 		RightBracket file.Idx
-		Elements     []Expression
-		Rest         Expression
 	}
 
 	AssignExpression struct {
-		Operator token.Token
 		Left     Expression
 		Right    Expression
+		Operator token.Token
 	}
 
 	BadExpression struct {
@@ -107,15 +107,15 @@ type (
 	}
 
 	BinaryExpression struct {
-		Operator   token.Token
 		Left       Expression
 		Right      Expression
+		Operator   token.Token
 		Comparison bool
 	}
 
 	BooleanLiteral struct {
-		Idx     file.Idx
 		Literal string
+		Idx     file.Idx
 		Value   bool
 	}
 
@@ -128,8 +128,8 @@ type (
 
 	CallExpression struct {
 		Callee           Expression
-		LeftParenthesis  file.Idx
 		ArgumentList     []Expression
+		LeftParenthesis  file.Idx
 		RightParenthesis file.Idx
 	}
 
@@ -158,7 +158,6 @@ type (
 	}
 
 	FunctionLiteral struct {
-		Function      file.Idx
 		Name          *Identifier
 		ParameterList *ParameterList
 		Body          *BlockStatement
@@ -166,16 +165,18 @@ type (
 
 		DeclarationList []*VariableDeclaration
 
+		Function file.Idx
+
 		Async, Generator bool
 	}
 
 	ClassLiteral struct {
+		SuperClass Expression
+		Name       *Identifier
+		Source     string
+		Body       []ClassElement
 		Class      file.Idx
 		RightBrace file.Idx
-		Name       *Identifier
-		SuperClass Expression
-		Body       []ClassElement
-		Source     string
 	}
 
 	ConciseBody interface {
@@ -188,11 +189,11 @@ type (
 	}
 
 	ArrowFunctionLiteral struct {
-		Start           file.Idx
-		ParameterList   *ParameterList
 		Body            ConciseBody
+		ParameterList   *ParameterList
 		Source          string
 		DeclarationList []*VariableDeclaration
+		Start           file.Idx
 		End             file.Idx
 		Async           bool
 	}
@@ -207,42 +208,42 @@ type (
 	}
 
 	NewExpression struct {
-		New              file.Idx
 		Callee           Expression
-		LeftParenthesis  file.Idx
 		ArgumentList     []Expression
+		New              file.Idx
+		LeftParenthesis  file.Idx
 		RightParenthesis file.Idx
 	}
 
 	NullLiteral struct {
-		Idx     file.Idx
 		Literal string
+		Idx     file.Idx
 	}
 
 	NumberLiteral struct {
-		Idx     file.Idx
-		Literal string
 		Value   any
+		Literal string
+		Idx     file.Idx
 		Kind    NumberLiteralKind
 	}
 
 	ObjectLiteral struct {
+		Value      []Property
 		LeftBrace  file.Idx
 		RightBrace file.Idx
-		Value      []Property
 	}
 
 	ObjectPattern struct {
+		Rest       Expression
+		Properties []Property
 		LeftBrace  file.Idx
 		RightBrace file.Idx
-		Properties []Property
-		Rest       Expression
 	}
 
 	ParameterList struct {
-		Opening file.Idx
-		List    []*Binding
 		Rest    Expression
+		List    []*Binding
+		Opening file.Idx
 		Closing file.Idx
 	}
 
@@ -252,14 +253,14 @@ type (
 	}
 
 	PropertyShort struct {
-		Name        Identifier
 		Initializer Expression
+		Name        Identifier
 	}
 
 	PropertyKeyed struct {
 		Key      Expression
-		Kind     PropertyKind
 		Value    Expression
+		Kind     PropertyKind
 		Computed bool
 	}
 
@@ -268,10 +269,10 @@ type (
 	}
 
 	RegExpLiteral struct {
-		Idx     file.Idx
 		Literal string
 		Pattern string
 		Flags   string
+		Idx     file.Idx
 	}
 
 	SequenceExpression struct {
@@ -279,25 +280,25 @@ type (
 	}
 
 	StringLiteral struct {
-		Idx     file.Idx
 		Literal string
 		Value   unistring.String
+		Idx     file.Idx
 		Sloppy  bool // Has a legacy octal or \8, \9 escape sequence, which is not allowed in strict mode
 	}
 
 	TemplateElement struct {
-		Idx     file.Idx
 		Literal string
 		Parsed  unistring.String
+		Idx     file.Idx
 		Valid   bool
 	}
 
 	TemplateLiteral struct {
-		OpenQuote   file.Idx
-		CloseQuote  file.Idx
 		Tag         Expression
 		Elements    []*TemplateElement
 		Expressions []Expression
+		OpenQuote   file.Idx
+		CloseQuote  file.Idx
 	}
 
 	ThisExpression struct {
@@ -312,9 +313,9 @@ type (
 	}
 
 	UnaryExpression struct {
+		Operand  Expression
 		Operator token.Token
 		Idx      file.Idx // If a prefix operation
-		Operand  Expression
 		Postfix  bool
 	}
 
@@ -380,27 +381,27 @@ type (
 	}
 
 	BlockStatement struct {
-		LeftBrace  file.Idx
 		List       []Statement
+		LeftBrace  file.Idx
 		RightBrace file.Idx
 	}
 
 	BranchStatement struct {
+		Label *Identifier
 		Idx   file.Idx
 		Token token.Token
-		Label *Identifier
 	}
 
 	CaseStatement struct {
-		Case       file.Idx
 		Test       Expression
 		Consequent []Statement
+		Case       file.Idx
 	}
 
 	CatchStatement struct {
-		Catch     file.Idx
 		Parameter BindingTarget
 		Body      *BlockStatement
+		Catch     file.Idx
 	}
 
 	DebuggerStatement struct {
@@ -408,9 +409,9 @@ type (
 	}
 
 	DoWhileStatement struct {
-		Do               file.Idx
 		Test             Expression
 		Body             Statement
+		Do               file.Idx
 		RightParenthesis file.Idx
 	}
 
@@ -423,87 +424,87 @@ type (
 	}
 
 	ForInStatement struct {
-		For    file.Idx
 		Into   ForInto
 		Source Expression
 		Body   Statement
+		For    file.Idx
 	}
 
 	ForOfStatement struct {
-		For    file.Idx
 		Into   ForInto
 		Source Expression
 		Body   Statement
+		For    file.Idx
 		Await  bool
 	}
 
 	ForStatement struct {
-		For         file.Idx
 		Initializer ForLoopInitializer
 		Update      Expression
 		Test        Expression
 		Body        Statement
+		For         file.Idx
 	}
 
 	IfStatement struct {
-		If         file.Idx
 		Test       Expression
 		Consequent Statement
 		Alternate  Statement
+		If         file.Idx
 	}
 
 	LabelledStatement struct {
+		Statement Statement
 		Label     *Identifier
 		Colon     file.Idx
-		Statement Statement
 	}
 
 	ReturnStatement struct {
-		Return   file.Idx
 		Argument Expression
+		Return   file.Idx
 	}
 
 	SwitchStatement struct {
-		Switch       file.Idx
 		Discriminant Expression
-		Default      int
 		Body         []*CaseStatement
+		Switch       file.Idx
+		Default      int
 		RightBrace   file.Idx
 	}
 
 	ThrowStatement struct {
-		Throw    file.Idx
 		Argument Expression
+		Throw    file.Idx
 	}
 
 	TryStatement struct {
-		Try     file.Idx
 		Body    *BlockStatement
 		Catch   *CatchStatement
 		Finally *BlockStatement
+		Try     file.Idx
 	}
 
 	VariableStatement struct {
-		Var  file.Idx
 		List []*Binding
+		Var  file.Idx
 	}
 
 	LexicalDeclaration struct {
+		List  []*Binding
 		Idx   file.Idx
 		Token token.Token
-		List  []*Binding
 	}
 
 	WhileStatement struct {
-		While file.Idx
 		Test  Expression
 		Body  Statement
+		While file.Idx
 	}
 
 	WithStatement struct {
-		With   file.Idx
 		Object Expression
 		Body   Statement
+		With   file.Idx
 	}
 
 	FunctionDeclaration struct {
@@ -511,10 +512,10 @@ type (
 	}
 
 	ImportDeclaration struct {
-		Idx             file.Idx
 		ImportClause    *ImportClause
 		FromClause      *FromClause
 		ModuleSpecifier unistring.String
+		Idx             file.Idx
 	}
 
 	ImportClause struct {
@@ -537,15 +538,15 @@ type (
 	}
 
 	ExportDeclaration struct {
-		Idx                  file.Idx
-		Variable             *VariableStatement
 		AssignExpression     Expression
+		Variable             *VariableStatement
 		LexicalDeclaration   *LexicalDeclaration
 		ClassDeclaration     *ClassDeclaration
 		NamedExports         *NamedExports
 		ExportFromClause     *ExportFromClause
 		FromClause           *FromClause
 		HoistableDeclaration *HoistableDeclaration
+		Idx                  file.Idx
 		IsDefault            bool
 	}
 
@@ -553,9 +554,9 @@ type (
 		ModuleSpecifier unistring.String
 	}
 	ExportFromClause struct {
-		IsWildcard   bool
-		Alias        unistring.String
 		NamedExports *NamedExports
+		Alias        unistring.String
+		IsWildcard   bool
 	}
 
 	NamedExports struct {
@@ -614,8 +615,8 @@ func (*ImportDeclaration) _statementNode() {}
 
 type (
 	VariableDeclaration struct {
-		Var  file.Idx
 		List []*Binding
+		Var  file.Idx
 	}
 
 	ClassElement interface {
@@ -624,27 +625,27 @@ type (
 	}
 
 	FieldDefinition struct {
-		Idx         file.Idx
 		Key         Expression
 		Initializer Expression
+		Idx         file.Idx
 		Computed    bool
 		Static      bool
 	}
 
 	MethodDefinition struct {
-		Idx      file.Idx
 		Key      Expression
-		Kind     PropertyKind // "method", "get" or "set"
 		Body     *FunctionLiteral
+		Kind     PropertyKind // "method", "get" or "set"
+		Idx      file.Idx
 		Computed bool
 		Static   bool
 	}
 
 	ClassStaticBlock struct {
-		Static          file.Idx
 		Block           *BlockStatement
 		Source          string
 		DeclarationList []*VariableDeclaration
+		Static          file.Idx
 	}
 )
 
@@ -659,8 +660,8 @@ type (
 	}
 
 	ForLoopInitializerVarDeclList struct {
-		Var  file.Idx
 		List []*Binding
+		Var  file.Idx
 	}
 
 	ForLoopInitializerLexicalDecl struct {
@@ -677,9 +678,9 @@ type (
 	}
 
 	ForDeclaration struct {
+		Target  BindingTarget
 		Idx     file.Idx
 		IsConst bool
-		Target  BindingTarget
 	}
 
 	ForIntoExpression struct {
@@ -721,6 +722,7 @@ func (*ClassStaticBlock) _classElement() {}
 // ==== //
 
 type Program struct {
+	File *file.File
 	Body []Statement
 
 	DeclarationList []*VariableDeclaration
@@ -728,8 +730,6 @@ type Program struct {
 	ExportEntries   []*ExportDeclaration
 
 	HasTLA bool
-
-	File *file.File
 }
 
 // ==== //

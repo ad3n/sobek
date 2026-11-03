@@ -1,6 +1,6 @@
 # file
 --
-    import "github.com/grafana/sobek/file"
+    import "github.com/ad3n/sobek/file"
 
 Package file encapsulates the file abstractions used by the ast & parser.
 

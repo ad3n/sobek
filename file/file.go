@@ -57,8 +57,8 @@ func (self Position) String() string {
 
 // A FileSet represents a set of source files.
 type FileSet struct {
-	files []*File
 	last  *File
+	files []*File
 }
 
 // AddFile adds a new file with the given filename and src.
@@ -103,13 +103,13 @@ func (self *FileSet) Position(idx Idx) Position {
 }
 
 type File struct {
-	mu                sync.Mutex
+	sourceMap         *sourcemap.Consumer
 	name              string
 	src               string
-	base              int // This will always be 1 or greater
-	sourceMap         *sourcemap.Consumer
 	lineOffsets       []int
+	base              int // This will always be 1 or greater
 	lastScannedOffset int
+	mu                sync.Mutex
 }
 
 func NewFile(filename, src string, base int) *File {

@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"unsafe"
 
-	"github.com/grafana/sobek/unistring"
+	"github.com/ad3n/sobek/unistring"
 )
 
 type byteOrder bool
@@ -29,8 +29,8 @@ type typedArrayObjectCtor func(buf *arrayBufferObject, offset, length int, proto
 
 type arrayBufferObject struct {
 	baseObject
-	detached bool
 	data     []byte
+	detached bool
 }
 
 // ArrayBuffer is a Go wrapper around ECMAScript ArrayBuffer. Calling Runtime.ToValue() on it
@@ -79,11 +79,11 @@ type bigUint64Array []byte
 
 type typedArrayObject struct {
 	baseObject
+	typedArray     typedArray
 	viewedArrayBuf *arrayBufferObject
 	defaultCtor    *Object
 	length, offset int
 	elemSize       int
-	typedArray     typedArray
 }
 
 func (a ArrayBuffer) toValue(r *Runtime) Value {

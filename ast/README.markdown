@@ -1,6 +1,6 @@
 # ast
 --
-    import "github.com/grafana/sobek/ast"
+    import "github.com/ad3n/sobek/ast"
 
 Package ast declares types representing a JavaScript AST.
 

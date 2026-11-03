@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"sort"
 
-	"github.com/grafana/sobek/unistring"
+	"github.com/ad3n/sobek/unistring"
 )
 
 const (
@@ -61,13 +61,12 @@ type Object struct {
 type iterNextFunc func() (propIterItem, iterNextFunc)
 
 type PropertyDescriptor struct {
-	jsDescriptor *Object
-
 	Value Value
 
-	Writable, Configurable, Enumerable Flag
-
 	Getter, Setter Value
+	jsDescriptor   *Object
+
+	Writable, Configurable, Enumerable Flag
 }
 
 func (p *PropertyDescriptor) Empty() bool {
@@ -226,19 +225,20 @@ type objectImpl interface {
 }
 
 type baseObject struct {
-	class      string
-	val        *Object
-	prototype  *Object
-	extensible bool
+	val       *Object
+	prototype *Object
 
-	values    map[unistring.String]Value
-	propNames []unistring.String
-
-	lastSortedPropLen, idxPropCount int
+	values map[unistring.String]Value
 
 	symValues *orderedMap
 
 	privateElements map[*privateEnvType]*privateElements
+	class           string
+	propNames       []unistring.String
+
+	lastSortedPropLen, idxPropCount int
+
+	extensible bool
 }
 
 type guardedObject struct {
@@ -266,8 +266,8 @@ type FunctionCall struct {
 
 type ConstructorCall struct {
 	This      *Object
-	Arguments []Value
 	NewTarget *Object
+	Arguments []Value
 }
 
 func (f FunctionCall) Argument(idx int) Value {

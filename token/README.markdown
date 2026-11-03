@@ -1,6 +1,6 @@
 # token
 --
-    import "github.com/grafana/sobek/token"
+    import "github.com/ad3n/sobek/token"
 
 Package token defines constants representing the lexical tokens of JavaScript
 (ECMA5).

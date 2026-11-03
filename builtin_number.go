@@ -4,7 +4,7 @@ import (
 	"math"
 	"sync"
 
-	"github.com/grafana/sobek/ftoa"
+	"github.com/ad3n/sobek/ftoa"
 )
 
 func (r *Runtime) toNumber(v Value) Value {

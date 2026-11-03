@@ -441,8 +441,8 @@ func (r *Runtime) getImportMetaFor(m ModuleRecord) *Object {
 }
 
 type MetaProperty struct {
-	Key   string
 	Value Value
+	Key   string
 }
 
 func (r *Runtime) SetGetImportMetaProperties(fn func(ModuleRecord) []MetaProperty) {

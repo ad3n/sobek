@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/grafana/sobek/parser"
+	"github.com/ad3n/sobek/parser"
 )
 
 func TestGlobalObjectProto(t *testing.T) {

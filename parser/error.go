@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/grafana/sobek/file"
-	"github.com/grafana/sobek/token"
+	"github.com/ad3n/sobek/file"
+	"github.com/ad3n/sobek/token"
 )
 
 const (

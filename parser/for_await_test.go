@@ -3,7 +3,7 @@ package parser
 import (
 	"testing"
 
-	"github.com/grafana/sobek/ast"
+	"github.com/ad3n/sobek/ast"
 )
 
 func TestForAwaitOfSyntax(t *testing.T) {

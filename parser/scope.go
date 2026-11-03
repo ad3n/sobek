@@ -3,12 +3,17 @@ package parser
 import (
 	"slices"
 
-	"github.com/grafana/sobek/ast"
-	"github.com/grafana/sobek/unistring"
+	"github.com/ad3n/sobek/ast"
+	"github.com/ad3n/sobek/unistring"
 )
 
 type _scope struct {
-	outer             *_scope
+	outer           *_scope
+	declarationList []*ast.VariableDeclaration
+	importEntries   []*ast.ImportDeclaration
+	exportEntries   []*ast.ExportDeclaration
+
+	labels            []unistring.String
 	allowIn           bool
 	allowLet          bool
 	allowImportExport bool
@@ -19,12 +24,7 @@ type _scope struct {
 	inAsync           bool
 	allowAwait        bool
 	allowYield        bool
-	declarationList   []*ast.VariableDeclaration
-	importEntries     []*ast.ImportDeclaration
-	exportEntries     []*ast.ExportDeclaration
 	hasTLA            bool
-
-	labels []unistring.String
 }
 
 func (self *_parser) openScope() {

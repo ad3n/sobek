@@ -3,12 +3,12 @@ Sobek
 
 ECMAScript 5.1(+) implementation in Go.
 
-[![Go Reference](https://pkg.go.dev/badge/github.com/grafana/sobek.svg)](https://pkg.go.dev/github.com/grafana/sobek)
+[![Go Reference](https://pkg.go.dev/badge/github.com/ad3n/sobek.svg)](https://pkg.go.dev/github.com/ad3n/sobek)
 
 Sobek is an implementation of ECMAScript 5.1 in pure Go with emphasis on standard compliance and
 performance.
 
-This project is a fork of [goja](https://github.com/dop251/goja).
+This project is a fork of [Grafana Sobek](https://github.com/grafana/sobek), which is based on [goja](https://github.com/dop251/goja).
 
 This project was largely inspired by [otto](https://github.com/robertkrimen/otto).
 
@@ -36,7 +36,7 @@ In general the API is very close to the specification, which unfortunately does 
 
 For this reason it is very likely that it will be updated in breaking manner in the future and there is currently no concrete documentation around it.
 
-For any usage info or bare documentation it is recommended to look at the tests in [modules_test.go](https://github.com/grafana/sobek/blob/main/modules_test.go) and [modules_integration_test.go](https://github.com/grafana/sobek/blob/main/modules_integration_test.go).
+For any usage info or bare documentation it is recommended to look at the tests in [modules_test.go](https://github.com/ad3n/sobek/blob/main/modules_test.go) and [modules_integration_test.go](https://github.com/ad3n/sobek/blob/main/modules_integration_test.go).
 
 Also of note is that due to the nature of ESM you need to have an event loop implementation to use it. That is still not provided by Sobek and likely never will be.
 
@@ -138,13 +138,13 @@ if num := v.Export().(int64); num != 4 {
 
 Passing Values to JS
 --------------------
-Any Go value can be passed to JS using Runtime.ToValue() method. See the method's [documentation](https://pkg.go.dev/github.com/grafana/sobek#Runtime.ToValue) for more details.
+Any Go value can be passed to JS using Runtime.ToValue() method. See the method's [documentation](https://pkg.go.dev/github.com/ad3n/sobek#Runtime.ToValue) for more details.
 
 Exporting Values from JS
 ------------------------
 A JS value can be exported into its default Go representation using Value.Export() method.
 
-Alternatively it can be exported into a specific Go variable using [Runtime.ExportTo()](https://pkg.go.dev/github.com/grafana/sobek#Runtime.ExportTo) method.
+Alternatively it can be exported into a specific Go variable using [Runtime.ExportTo()](https://pkg.go.dev/github.com/ad3n/sobek#Runtime.ExportTo) method.
 
 Within a single export operation the same Object will be represented by the same Go value (either the same map, slice or
 a pointer to the same struct). This includes circular objects and makes it possible to export them.
@@ -153,7 +153,7 @@ Calling JS functions from Go
 ----------------------------
 There are 2 approaches:
 
-- Using [AssertFunction()](https://pkg.go.dev/github.com/grafana/sobek#AssertFunction):
+- Using [AssertFunction()](https://pkg.go.dev/github.com/ad3n/sobek#AssertFunction):
 ```go
 const SCRIPT = `
 function sum(a, b) {
@@ -178,7 +178,7 @@ if err != nil {
 fmt.Println(res)
 // Output: 42
 ```
-- Using [Runtime.ExportTo()](https://pkg.go.dev/github.com/grafana/sobek#Runtime.ExportTo):
+- Using [Runtime.ExportTo()](https://pkg.go.dev/github.com/ad3n/sobek#Runtime.ExportTo):
 ```go
 const SCRIPT = `
 function sum(a, b) {
@@ -209,7 +209,7 @@ Mapping struct field and method names
 -------------------------------------
 By default, the names are passed through as is which means they are capitalised. This does not match
 the standard JavaScript naming convention, so if you need to make your JS code look more natural or if you are
-dealing with a 3rd party library, you can use a [FieldNameMapper](https://pkg.go.dev/github.com/grafana/sobek#FieldNameMapper):
+dealing with a 3rd party library, you can use a [FieldNameMapper](https://pkg.go.dev/github.com/ad3n/sobek#FieldNameMapper):
 
 ```go
 vm := sobek.New()
@@ -223,14 +223,14 @@ fmt.Println(res.Export())
 // Output: 42
 ```
 
-There are two standard mappers: [TagFieldNameMapper](https://pkg.go.dev/github.com/grafana/sobek#TagFieldNameMapper) and
-[UncapFieldNameMapper](https://pkg.go.dev/github.com/grafana/sobek#UncapFieldNameMapper), or you can use your own implementation.
+There are two standard mappers: [TagFieldNameMapper](https://pkg.go.dev/github.com/ad3n/sobek#TagFieldNameMapper) and
+[UncapFieldNameMapper](https://pkg.go.dev/github.com/ad3n/sobek#UncapFieldNameMapper), or you can use your own implementation.
 
 Native Constructors
 -------------------
 
 In order to implement a constructor function in Go use `func (sobek.ConstructorCall) *sobek.Object`.
-See [Runtime.ToValue()](https://pkg.go.dev/github.com/grafana/sobek#Runtime.ToValue) documentation for more details.
+See [Runtime.ToValue()](https://pkg.go.dev/github.com/ad3n/sobek#Runtime.ToValue) documentation for more details.
 
 Regular Expressions
 -------------------
@@ -320,7 +320,7 @@ Step-by-step Guide on Merging Goja back into Sobek
 
 Since Sobek is a fork of Goja, we need to update Sobek when changes are made in Goja. The steps below will help you through how we bring those changes from Goja into Sobek.
 
-1. Since you're working in the Sobek repo, the assumption is that the remote is pointing to https://github.com/grafana/sobek.git as `origin`. So first we need to add Goja as a remote too, but we will call it `goja` since sobek is set to `origin`. Do this with:
+1. Since you're working in the Sobek repo, the assumption is that the remote is pointing to https://github.com/ad3n/sobek.git as `origin`. So first we need to add Goja as a remote too, but we will call it `goja` since sobek is set to `origin`. Do this with:
     `git remote add goja https://github.com/dop251/goja.git`
 
 2. to confirm the change run `git remote -v`
@@ -330,8 +330,8 @@ Since Sobek is a fork of Goja, we need to update Sobek when changes are made in 
     ```shell
     goja    https://github.com/dop251/goja.git (fetch)
     goja    https://github.com/dop251/goja.git (push)
-    origin  https://github.com/grafana/sobek.git (fetch)
-    origin  https://github.com/grafana/sobek.git (push)
+    origin  https://github.com/ad3n/sobek.git (fetch)
+    origin  https://github.com/ad3n/sobek.git (push)
     ```
 3. Make sure you're on `main` with `git checkout main`
 4. Run `git fetch --all` to fetch all changes from all remotes.

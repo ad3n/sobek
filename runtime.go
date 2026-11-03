@@ -18,10 +18,10 @@ import (
 
 	"golang.org/x/text/collate"
 
-	js_ast "github.com/grafana/sobek/ast"
-	"github.com/grafana/sobek/file"
-	"github.com/grafana/sobek/parser"
-	"github.com/grafana/sobek/unistring"
+	js_ast "github.com/ad3n/sobek/ast"
+	"github.com/ad3n/sobek/file"
+	"github.com/ad3n/sobek/parser"
+	"github.com/ad3n/sobek/unistring"
 )
 
 const (
@@ -48,8 +48,6 @@ const (
 )
 
 type global struct {
-	stash stash
-
 	Object   *Object
 	Array    *Object
 	Function *Object
@@ -159,6 +157,7 @@ type global struct {
 	parseFloat, parseInt *Object
 
 	typedArrayValues *Object
+	stash            stash
 }
 
 type Flag int
@@ -339,8 +338,8 @@ type baseUncatchableException struct {
 func (e *baseUncatchableException) _uncatchableException() {}
 
 type InterruptedError struct {
-	baseUncatchableException
 	iface any
+	baseUncatchableException
 }
 
 func (e *InterruptedError) Unwrap() error {

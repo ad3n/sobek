@@ -3,7 +3,7 @@ package sobek
 import (
 	"reflect"
 
-	"github.com/grafana/sobek/unistring"
+	"github.com/ad3n/sobek/unistring"
 )
 
 type PromiseState int
@@ -39,11 +39,11 @@ type promiseCapability struct {
 }
 
 type promiseReaction struct {
+	asyncCtx    any
 	capability  *promiseCapability
-	typ         promiseReactionType
 	handler     *jobCallback
 	asyncRunner *asyncRunner
-	asyncCtx    any
+	typ         promiseReactionType
 }
 
 var typePromise = reflect.TypeFor[*Promise]()
@@ -56,10 +56,10 @@ var typePromise = reflect.TypeFor[*Promise]()
 // WARNING: Instances of Promise are not goroutine-safe. See Runtime.NewPromise() for more details.
 type Promise struct {
 	baseObject
-	state            PromiseState
 	result           Value
 	fulfillReactions []*promiseReaction
 	rejectReactions  []*promiseReaction
+	state            PromiseState
 	handled          bool
 }
 

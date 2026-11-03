@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/grafana/sobek/ast"
+	"github.com/ad3n/sobek/ast"
 )
 
 func marshal(name string, children ...any) any {

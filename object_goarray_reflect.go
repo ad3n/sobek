@@ -4,16 +4,16 @@ import (
 	"reflect"
 	"strconv"
 
-	"github.com/grafana/sobek/unistring"
+	"github.com/ad3n/sobek/unistring"
 )
 
 type objectGoArrayReflect struct {
 	objectGoReflect
 	lengthProp valueProperty
 
-	valueCache valueArrayCache
-
 	putIdx func(idx int, v Value, throw bool) bool
+
+	valueCache valueArrayCache
 }
 
 type valueArrayCache []reflectValueWrapper

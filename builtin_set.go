@@ -486,9 +486,9 @@ func (r *Runtime) setIterProto_next(call FunctionCall) Value {
 
 type setRecord struct {
 	o      *Object
-	size   int
 	has    func(Value) bool
 	keysFn func(FunctionCall) Value
+	size   int
 }
 
 func (sr *setRecord) iterateKeys(step func(Value) bool) {

@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/grafana/sobek/unistring"
+	"github.com/ad3n/sobek/unistring"
 )
 
 type asciiString string

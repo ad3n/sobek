@@ -9,20 +9,20 @@ import (
 	"sort"
 	"strconv"
 
-	"github.com/grafana/sobek/unistring"
+	"github.com/ad3n/sobek/unistring"
 )
 
 type sparseArrayItem struct {
-	idx   uint32
 	value Value
+	idx   uint32
 }
 
 type sparseArrayObject struct {
 	baseObject
-	items          []sparseArrayItem
-	length         uint32
-	propValueCount int
 	lengthProp     valueProperty
+	items          []sparseArrayItem
+	propValueCount int
+	length         uint32
 }
 
 func (a *sparseArrayObject) findIdx(idx uint32) int {

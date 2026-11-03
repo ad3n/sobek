@@ -6,19 +6,19 @@ import (
 	"reflect"
 	"sort"
 
-	"github.com/grafana/sobek/unistring"
+	"github.com/ad3n/sobek/unistring"
 )
 
 type templatePropFactory func(*Runtime) Value
 
 type objectTemplate struct {
-	propNames []unistring.String
-	props     map[unistring.String]templatePropFactory
+	props map[unistring.String]templatePropFactory
 
-	symProps     map[*Symbol]templatePropFactory
-	symPropNames []*Symbol
+	symProps map[*Symbol]templatePropFactory
 
 	protoFactory func(*Runtime) *Object
+	propNames    []unistring.String
+	symPropNames []*Symbol
 }
 
 type templatedObject struct {
@@ -29,10 +29,9 @@ type templatedObject struct {
 }
 
 type templatedFuncObject struct {
-	templatedObject
-
 	f         func(FunctionCall) Value
 	construct func(args []Value, newTarget *Object) *Object
+	templatedObject
 }
 
 // This type exists because Array.prototype is supposed to be an array itself and I could not find
