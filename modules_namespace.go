@@ -128,6 +128,10 @@ func (no *namespaceObject) hasOwnPropertyStr(name unistring.String) bool {
 	return ok
 }
 
+func (no *namespaceObject) hasAndGetStr(name unistring.String, receiver Value) (Value, bool) {
+	return no.hasAndGetOwnStr(name, no.getOwnPropStr(name), receiver)
+}
+
 func (no *namespaceObject) getStr(name unistring.String, receiver Value) Value {
 	prop := no.getOwnPropStr(name)
 	if prop, ok := prop.(*valueProperty); ok {

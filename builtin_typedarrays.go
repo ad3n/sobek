@@ -242,12 +242,10 @@ func (r *Runtime) newDataView(args []Value, newTarget *Object) *Object {
 	}
 	o := &Object{runtime: r}
 	b := &dataViewObject{
-		baseObject: baseObject{
-			class:      classObject,
-			val:        o,
-			prototype:  proto,
-			extensible: true,
-		},
+		class:          classObject,
+		val:            o,
+		prototype:      proto,
+		extensible:     true,
 		viewedArrayBuf: buffer,
 		byteOffset:     byteOffset,
 		byteLen:        byteLen,
@@ -1051,7 +1049,7 @@ func (r *Runtime) typedArrayProto_set(call FunctionCall) Value {
 				srcOffset := src.offset
 				if ta.elemSize == src.elemSize {
 					if curDst <= curSrc || curDst >= endSrc {
-						for i := 0; i < srcLen; i++ {
+						for i := range srcLen {
 							ta.typedArray.set(dstOffset+i, src.typedArray.get(srcOffset+i))
 						}
 					} else {
@@ -1089,7 +1087,7 @@ func (r *Runtime) typedArrayProto_set(call FunctionCall) Value {
 			if x := srcLen + targetOffset; x < 0 || x > targetLen {
 				panic(r.newError(r.getRangeError(), "Source is too large"))
 			}
-			for i := 0; i < srcLen; i++ {
+			for i := range srcLen {
 				val := nilSafe(srcObj.self.getIdx(valueInt(i), nil))
 				if ta.isValidIntegerIndex(targetOffset + i) {
 					ta.typedArray.set(ta.offset+targetOffset+i, val)
@@ -1114,10 +1112,7 @@ func (r *Runtime) typedArrayProto_slice(call FunctionCall) Value {
 		}
 		end := toIntStrict(relToIdx(e, length))
 
-		count := end - start
-		if count < 0 {
-			count = 0
-		}
+		count := max(end-start, 0)
 		dst := r.typedArraySpeciesCreate(ta, []Value{intToValue(int64(count))})
 		if dst.defaultCtor == ta.defaultCtor {
 			if count > 0 {
@@ -1133,13 +1128,13 @@ func (r *Runtime) typedArrayProto_slice(call FunctionCall) Value {
 					copy(dstBuf, srcBuf)
 				} else {
 					// Slices overlap forward, cannot just use copy() here because it's too smart
-					for i := 0; i < byteCount; i++ {
+					for i := range byteCount {
 						dstBuf[i] = srcBuf[i]
 					}
 				}
 			}
 		} else {
-			for i := 0; i < count; i++ {
+			for i := range count {
 				ta.viewedArrayBuf.ensureNotDetached(true)
 				dst.typedArray.set(dst.offset+i, ta.typedArray.get(ta.offset+start+i))
 			}
@@ -1217,7 +1212,7 @@ func (r *Runtime) typedArrayProto_toLocaleString(call FunctionCall) Value {
 	if ta, ok := r.toObject(call.This).self.(*typedArrayObject); ok {
 		length := ta.length
 		var buf StringBuilder
-		for i := 0; i < length; i++ {
+		for i := range length {
 			ta.viewedArrayBuf.ensureNotDetached(true)
 			if i > 0 {
 				buf.WriteRune(',')
@@ -1294,7 +1289,7 @@ func (r *Runtime) typedArrayProto_toReversed(call FunctionCall) Value {
 
 	a := r.typedArrayCreate(ta.defaultCtor, intToValue(int64(length)))
 
-	for k := 0; k < length; k++ {
+	for k := range length {
 		from := length - k - 1
 		fromValue := ta.typedArray.get(ta.offset + from)
 		a.typedArray.set(k, fromValue)
@@ -1374,7 +1369,7 @@ func (r *Runtime) typedArray_from(call FunctionCall) Value {
 	length := toIntStrict(toLength(source.self.getStr("length", nil)))
 	ta := r.typedArrayCreate(c, intToValue(int64(length)))
 	if mapFc == nil {
-		for i := 0; i < length; i++ {
+		for i := range length {
 			ta.typedArray.set(i, nilSafe(source.self.getIdx(valueInt(i), nil)))
 		}
 	} else {
@@ -1382,7 +1377,7 @@ func (r *Runtime) typedArray_from(call FunctionCall) Value {
 			This:      thisValue,
 			Arguments: []Value{nil, nil},
 		}
-		for i := 0; i < length; i++ {
+		for i := range length {
 			idx := valueInt(i)
 			fc.Arguments[0], fc.Arguments[1] = source.self.getIdx(idx, nil), idx
 			ta.typedArray.set(i, mapFc(fc))
@@ -1460,7 +1455,7 @@ func (r *Runtime) typedArrayFrom(ctor, items *Object, mapFn, thisValue Value, ta
 	length := toIntStrict(toLength(items.self.getStr("length", nil)))
 	ta := r.allocateTypedArray(ctor, length, taCtor, proto)
 	if mapFc == nil {
-		for i := 0; i < length; i++ {
+		for i := range length {
 			ta.typedArray.set(i, nilSafe(items.self.getIdx(valueInt(i), nil)))
 		}
 	} else {
@@ -1468,7 +1463,7 @@ func (r *Runtime) typedArrayFrom(ctor, items *Object, mapFn, thisValue Value, ta
 			This:      thisValue,
 			Arguments: []Value{nil, nil},
 		}
-		for i := 0; i < length; i++ {
+		for i := range length {
 			idx := valueInt(i)
 			fc.Arguments[0], fc.Arguments[1] = items.self.getIdx(idx, nil), idx
 			ta.typedArray.set(i, mapFc(fc))
@@ -1532,7 +1527,7 @@ func (r *Runtime) _newTypedArrayFromTypedArray(src *typedArrayObject, newTarget 
 		checkTypedArrayMixBigInt(src.defaultCtor, newTarget)
 	}
 	dst.length = l
-	for i := 0; i < l; i++ {
+	for i := range l {
 		dst.typedArray.set(i, src.typedArray.get(src.offset+i))
 	}
 	return dst.val

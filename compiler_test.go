@@ -188,7 +188,6 @@ func (r *Runtime) testPrg(p *Program, expectedResult Value, t *testing.T) {
 	}
 	vm := r.vm
 	t.Logf("stack size: %d", len(vm.stack))
-	t.Logf("stashAllocs: %d", vm.stashAllocs)
 
 	if v == nil && expectedResult != nil || !v.SameAs(expectedResult) {
 		t.Fatalf("Result: %+v, expected: %+v", v, expectedResult)
@@ -6392,10 +6391,52 @@ func BenchmarkCompile(b *testing.B) {
 
 	src := string(data)
 
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		_, err := Compile("test.js", src, false)
 		if err != nil {
 			b.Fatal(err)
+		}
+	}
+}
+
+func (n *newFunc) getPrg() *Program {
+	return n.prg
+}
+
+func (p *Program) dumpCode(logger func(format string, args ...any)) {
+	p._dumpCode("", logger)
+}
+
+func (p *Program) _dumpCode(indent string, logger func(format string, args ...any)) {
+	dumpInitFields := func(initFields *Program) {
+		i := indent + ">"
+		logger("%s ---- init_fields:", i)
+		initFields._dumpCode(i, logger)
+		logger("%s ----", i)
+	}
+	for pc, ins := range p.code {
+		logger("%s %d: %T(%v)", indent, pc, ins, ins)
+		var prg *Program
+		switch f := ins.(type) {
+		case interface{ getPrg() *Program }:
+			prg = f.getPrg()
+		case *newDerivedClass:
+			if f.initFields != nil {
+				dumpInitFields(f.initFields)
+			}
+			prg = f.ctor
+		case *newClass:
+			if f.initFields != nil {
+				dumpInitFields(f.initFields)
+			}
+			prg = f.ctor
+		case *newStaticFieldInit:
+			if f.initFields != nil {
+				dumpInitFields(f.initFields)
+			}
+		}
+		if prg != nil {
+			prg._dumpCode(indent+">", logger)
 		}
 	}
 }

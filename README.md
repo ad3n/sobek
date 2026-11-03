@@ -12,7 +12,7 @@ This project is a fork of [goja](https://github.com/dop251/goja).
 
 This project was largely inspired by [otto](https://github.com/robertkrimen/otto).
 
-The minimum required Go version is 1.26.
+The minimum required Go version is 1.27.3.
 
 Features
 --------
@@ -235,7 +235,7 @@ See [Runtime.ToValue()](https://pkg.go.dev/github.com/grafana/sobek#Runtime.ToVa
 Regular Expressions
 -------------------
 
-Sobek uses the [regexp2](https://github.com/dlclark/regexp2) library. There are a few known incompatibilities, but they are
+Sobek uses the [regexp2](https://github.com/ad3n/regexp2) library. There are a few known incompatibilities, but they are
 mostly edge cases and should not affect general usage. See tc39_test.go for the list of exclusions. Any new
 incompatibilities should be reported as bugs.
 

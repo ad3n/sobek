@@ -5,6 +5,7 @@ import (
 	"math"
 	"math/bits"
 	"reflect"
+	"slices"
 	"sort"
 	"strconv"
 
@@ -35,8 +36,8 @@ func (a *sparseArrayObject) _setLengthInt(l uint32, throw bool) bool {
 	if l <= a.length {
 		if a.propValueCount > 0 {
 			// Slow path
-			for i := len(a.items) - 1; i >= 0; i-- {
-				item := a.items[i]
+			for _, item := range slices.Backward(a.items) {
+
 				if item.idx < l {
 					break
 				}
@@ -435,11 +436,11 @@ func (a *sparseArrayObject) sortLen() int {
 	return 0
 }
 
-func (a *sparseArrayObject) export(ctx *objectExportCtx) interface{} {
+func (a *sparseArrayObject) export(ctx *objectExportCtx) any {
 	if v, exists := ctx.get(a.val); exists {
 		return v
 	}
-	arr := make([]interface{}, a.length)
+	arr := make([]any, a.length)
 	ctx.put(a.val, arr)
 	var prevIdx uint32
 	for _, item := range a.items {

@@ -43,10 +43,10 @@ type promiseReaction struct {
 	typ         promiseReactionType
 	handler     *jobCallback
 	asyncRunner *asyncRunner
-	asyncCtx    interface{}
+	asyncCtx    any
 }
 
-var typePromise = reflect.TypeOf((*Promise)(nil))
+var typePromise = reflect.TypeFor[*Promise]()
 
 // Promise is a Go wrapper around ECMAScript Promise. Calling Runtime.ToValue() on it
 // returns the underlying Object. Calling Export() on a Promise Object returns a Promise.
@@ -146,7 +146,7 @@ func (p *Promise) exportType() reflect.Type {
 	return typePromise
 }
 
-func (p *Promise) export(*objectExportCtx) interface{} {
+func (p *Promise) export(*objectExportCtx) any {
 	return p
 }
 
@@ -622,9 +622,9 @@ func (r *Runtime) getPromise() *Object {
 	return ret
 }
 
-func (r *Runtime) wrapPromiseReaction(fObj *Object) func(interface{}) error {
+func (r *Runtime) wrapPromiseReaction(fObj *Object) func(any) error {
 	f, _ := AssertFunction(fObj)
-	return func(x interface{}) error {
+	return func(x any) error {
 		_, err := f(nil, r.ToValue(x))
 		return err
 	}
@@ -652,7 +652,7 @@ func (r *Runtime) wrapPromiseReaction(fObj *Object) func(interface{}) error {
 //	        })
 //	    }()
 //	}
-func (r *Runtime) NewPromise() (promise *Promise, resolve, reject func(reason interface{}) error) {
+func (r *Runtime) NewPromise() (promise *Promise, resolve, reject func(reason any) error) {
 	p := r.newPromise(r.getPromisePrototype())
 	resolveF, rejectF := p.createResolvingFunctions()
 	return p, r.wrapPromiseReaction(resolveF), r.wrapPromiseReaction(rejectF)

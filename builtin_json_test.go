@@ -129,7 +129,7 @@ func TestMarshalJSONError(t *testing.T) {
 }
 
 func BenchmarkJSONStringify(b *testing.B) {
-	b.StopTimer()
+
 	vm := New()
 	var createObj func(level int) *Object
 	createObj = func(level int) *Object {
@@ -147,8 +147,42 @@ func BenchmarkJSONStringify(b *testing.B) {
 	o := createObj(3)
 	json := vm.Get("JSON").(*Object)
 	stringify, _ := AssertFunction(json.Get("stringify"))
-	b.StartTimer()
-	for i := 0; i < b.N; i++ {
+
+	for b.Loop() {
 		stringify(nil, o)
+	}
+}
+
+func TestJSONTemplateExport(t *testing.T) {
+	vm := New()
+	value, err := vm.RunString(`
+		Object.defineProperty(JSON, "rawJSON", { enumerable: true, value: 41 })
+		JSON.extra = 42
+		JSON
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	got := value.Export().(map[string]any)
+	if len(got) != 2 || got["rawJSON"] != int64(41) || got["extra"] != int64(42) {
+		t.Fatalf("unexpected exported JSON properties: %v", got)
+	}
+}
+
+func TestJSONTemplatePrototype(t *testing.T) {
+	vm := New()
+	value, err := vm.RunString(`
+		Object.preventExtensions(JSON)
+		Reflect.setPrototypeOf(JSON, Object.prototype) &&
+			!Reflect.setPrototypeOf(JSON, null) &&
+			Object.getPrototypeOf(JSON) === Object.prototype
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !value.ToBoolean() {
+		t.Fatal("unexpected JSON prototype after preventExtensions")
 	}
 }

@@ -54,14 +54,14 @@ func (so *setObject) exportType() reflect.Type {
 	return setExportType
 }
 
-func (so *setObject) export(ctx *objectExportCtx) interface{} {
+func (so *setObject) export(ctx *objectExportCtx) any {
 	if v, exists := ctx.get(so.val); exists {
 		return v
 	}
-	a := make([]interface{}, so.m.size)
+	a := make([]any, so.m.size)
 	ctx.put(so.val, a)
 	iter := so.m.newIter()
-	for i := 0; i < len(a); i++ {
+	for i := range a {
 		entry := iter.next()
 		if entry == nil {
 			break
@@ -83,7 +83,7 @@ func (so *setObject) exportToArrayOrSlice(dst reflect.Value, typ reflect.Type, c
 	ctx.putTyped(so.val, typ, dst.Interface())
 	iter := so.m.newIter()
 	r := so.val.runtime
-	for i := 0; i < l; i++ {
+	for i := range l {
 		entry := iter.next()
 		if entry == nil {
 			break

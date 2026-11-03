@@ -18,7 +18,7 @@ type simpleComboResolver struct {
 	cache        map[string]cacheElement
 	reverseCache map[sobek.ModuleRecord]string
 	fs           fs.FS
-	custom       func(interface{}, string) (sobek.ModuleRecord, error)
+	custom       func(any, string) (sobek.ModuleRecord, error)
 }
 type cacheElement struct {
 	m   sobek.ModuleRecord
@@ -29,7 +29,7 @@ func newSimpleComboResolver() *simpleComboResolver {
 	return &simpleComboResolver{cache: make(map[string]cacheElement), reverseCache: make(map[sobek.ModuleRecord]string)}
 }
 
-func (s *simpleComboResolver) resolve(referencingScriptOrModule interface{}, specifier string) (sobek.ModuleRecord, error) {
+func (s *simpleComboResolver) resolve(referencingScriptOrModule any, specifier string) (sobek.ModuleRecord, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	k, ok := s.cache[specifier]
@@ -64,7 +64,7 @@ type unresolvedBinding struct {
 func TestNotSourceModulesBigTest(t *testing.T) {
 	t.Parallel()
 	resolver := newSimpleComboResolver()
-	resolver.custom = func(_ interface{}, specifier string) (sobek.ModuleRecord, error) {
+	resolver.custom = func(_ any, specifier string) (sobek.ModuleRecord, error) {
 		switch specifier {
 		case "custom:coolstuff":
 			return &simpleModuleImpl{}, nil
@@ -140,7 +140,7 @@ func TestNotSourceModulesBigTest(t *testing.T) {
 func TestNotSourceModulesBigTestDynamicImport(t *testing.T) {
 	t.Parallel()
 	resolver := newSimpleComboResolver()
-	resolver.custom = func(_ interface{}, specifier string) (sobek.ModuleRecord, error) {
+	resolver.custom = func(_ any, specifier string) (sobek.ModuleRecord, error) {
 		switch specifier {
 		case "custom:coolstuff":
 			return &simpleModuleImpl{}, nil
@@ -209,7 +209,7 @@ func TestNotSourceModulesBigTestDynamicImport(t *testing.T) {
 	vm.SetPromiseRejectionTracker(func(p *sobek.Promise, operation sobek.PromiseRejectionOperation) {
 		t.Fatal(p.Result())
 	})
-	vm.SetImportModuleDynamically(func(referencingScriptOrModule interface{}, specifierValue sobek.Value, promiseCapability interface{}) {
+	vm.SetImportModuleDynamically(func(referencingScriptOrModule any, specifierValue sobek.Value, promiseCapability any) {
 		specifier := specifierValue.String()
 		go func() {
 			m, err := resolver.resolve(referencingScriptOrModule, specifier)
@@ -351,7 +351,7 @@ func (si *cyclicModuleInstanceImpl) HasTLA() bool {
 	return false
 }
 
-func (si *cyclicModuleInstanceImpl) ExecuteModule(rt *sobek.Runtime, _, _ func(interface{}) error) (sobek.CyclicModuleInstance, error) {
+func (si *cyclicModuleInstanceImpl) ExecuteModule(rt *sobek.Runtime, _, _ func(any) error) (sobek.CyclicModuleInstance, error) {
 	si.rt = rt
 	return si, nil
 }

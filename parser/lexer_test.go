@@ -14,7 +14,7 @@ func TestLexer(t *testing.T) {
 			return parser
 		}
 
-		test := func(src string, test ...interface{}) {
+		test := func(src string, test ...any) {
 			parser := setup(src)
 			for len(test) > 0 {
 				tkn, literal, _, _, _, idx := parser.scan()

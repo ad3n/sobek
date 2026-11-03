@@ -10,18 +10,18 @@ import (
 	"github.com/grafana/sobek/ast"
 )
 
-func marshal(name string, children ...interface{}) interface{} {
+func marshal(name string, children ...any) any {
 	if len(children) == 1 {
 		if name == "" {
 			return testMarshalNode(children[0])
 		}
-		return map[string]interface{}{
+		return map[string]any{
 			name: children[0],
 		}
 	}
-	map_ := map[string]interface{}{}
+	map_ := map[string]any{}
 	length := len(children) / 2
-	for i := 0; i < length; i++ {
+	for i := range length {
 		name := children[i*2].(string)
 		value := children[i*2+1]
 		map_[name] = value
@@ -29,12 +29,12 @@ func marshal(name string, children ...interface{}) interface{} {
 	if name == "" {
 		return map_
 	}
-	return map[string]interface{}{
+	return map[string]any{
 		name: map_,
 	}
 }
 
-func testMarshalNode(node interface{}) interface{} {
+func testMarshalNode(node any) any {
 	switch node := node.(type) {
 
 	// Expression
@@ -133,7 +133,7 @@ func testMarshalNode(node interface{}) interface{} {
 		if_ := marshal("",
 			"Test", testMarshalNode(node.Test),
 			"Consequent", testMarshalNode(node.Consequent),
-		).(map[string]interface{})
+		).(map[string]any)
 		if node.Alternate != nil {
 			if_["Alternate"] = testMarshalNode(node.Alternate)
 		}
@@ -174,7 +174,7 @@ func testMarshalNode(node interface{}) interface{} {
 	{
 		value := reflect.ValueOf(node)
 		if value.Kind() == reflect.Slice {
-			tmp0 := []interface{}{}
+			tmp0 := []any{}
 			for index := 0; index < value.Len(); index++ {
 				tmp0 = append(tmp0, testMarshalNode(value.Index(index).Interface()))
 			}
@@ -185,7 +185,7 @@ func testMarshalNode(node interface{}) interface{} {
 	return nil
 }
 
-func testMarshal(node interface{}) string {
+func testMarshal(node any) string {
 	value, err := json.Marshal(testMarshalNode(node))
 	if err != nil {
 		panic(err)

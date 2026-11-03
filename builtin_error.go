@@ -111,12 +111,10 @@ func (e *errorObject) init() {
 func (r *Runtime) newErrorObject(proto *Object, class string) *errorObject {
 	obj := &Object{runtime: r}
 	o := &errorObject{
-		baseObject: baseObject{
-			class:      class,
-			val:        obj,
-			extensible: true,
-			prototype:  proto,
-		},
+		class:      class,
+		val:        obj,
+		extensible: true,
+		prototype:  proto,
 	}
 	obj.self = o
 	o.init()

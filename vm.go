@@ -2,6 +2,7 @@ package sobek
 
 import (
 	"fmt"
+	"maps"
 	"math"
 	"math/big"
 	"math/bits"
@@ -426,10 +427,8 @@ type vm struct {
 
 	maxCallStackSize int
 
-	stashAllocs int
-
 	interrupted   uint32
-	interruptVal  interface{}
+	interruptVal  any
 	interruptLock sync.Mutex
 
 	curAsyncRunner *asyncRunner
@@ -596,21 +595,15 @@ func (s *stash) getRefByName(name unistring.String, strict bool) ref {
 			if idx&maskVar == 0 {
 				if idx&maskConst == 0 {
 					return &stashRefLex{
-						stashRef: stashRef{
-							n:   name,
-							v:   &s.values,
-							idx: int(idx &^ maskTyp),
-						},
+						n:   name,
+						v:   &s.values,
+						idx: int(idx &^ maskTyp),
 					}
 				} else {
 					return &stashRefConst{
-						stashRefLex: stashRefLex{
-							stashRef: stashRef{
-								n:   name,
-								v:   &s.values,
-								idx: int(idx &^ maskTyp),
-							},
-						},
+						n:           name,
+						v:           &s.values,
+						idx:         int(idx &^ maskTyp),
 						strictConst: strict || (idx&maskStrict != 0),
 					}
 				}
@@ -663,7 +656,6 @@ func (vm *vm) newStash() {
 		outer: vm.stash,
 		vm:    vm, // NOTE(@mstoykov): it will be nice if we do not have cyclic dependency
 	}
-	vm.stashAllocs++
 }
 
 func (vm *vm) init() {
@@ -703,13 +695,7 @@ func (vm *vm) run() {
 	}
 
 	if interrupted {
-		vm.interruptLock.Lock()
-		v := &InterruptedError{
-			iface: vm.interruptVal,
-		}
-		v.stack = vm.captureStack(nil, 0)
-		vm.interruptLock.Unlock()
-		panic(v)
+		vm.throwInterrupt()
 	}
 }
 
@@ -749,7 +735,21 @@ func (vm *vm) runWithProfiler() bool {
 	return false
 }
 
-func (vm *vm) Interrupt(v interface{}) {
+func (vm *vm) checkInterrupt() {
+	if atomic.LoadUint32(&vm.interrupted) != 0 {
+		vm.throwInterrupt()
+	}
+}
+
+func (vm *vm) throwInterrupt() {
+	vm.interruptLock.Lock()
+	v := &InterruptedError{iface: vm.interruptVal}
+	vm.interruptLock.Unlock()
+	v.stack = vm.captureStack(nil, 0)
+	panic(v)
+}
+
+func (vm *vm) Interrupt(v any) {
 	vm.interruptLock.Lock()
 	vm.interruptVal = v
 	atomic.StoreUint32(&vm.interrupted, 1)
@@ -864,7 +864,7 @@ func (vm *vm) restoreStacks(iterLen, refLen uint32) (ex *Exception) {
 	return
 }
 
-func (vm *vm) handleThrow(arg interface{}) *Exception {
+func (vm *vm) handleThrow(arg any) *Exception {
 	ex := vm.exceptionFromValue(arg)
 	for len(vm.tryStack) > 0 {
 		tf := &vm.tryStack[len(vm.tryStack)-1]
@@ -911,7 +911,7 @@ func (vm *vm) handleThrow(arg interface{}) *Exception {
 
 // Calls to this method must be made from the run() loop and must be the last statement before 'return'.
 // In all other cases exceptions must be thrown using panic().
-func (vm *vm) throw(v interface{}) {
+func (vm *vm) throw(v any) {
 	if ex := vm.handleThrow(v); ex != nil {
 		panic(ex)
 	}
@@ -1297,7 +1297,7 @@ func (e export) exec(vm *vm) {
 	level := int(e.idx >> 24)
 	idx := uint32(e.idx & 0x00FFFFFF)
 	stash := vm.stash
-	for i := 0; i < level; i++ {
+	for range level {
 		stash = stash.outer
 	}
 	e.callback(vm, func() Value {
@@ -1316,7 +1316,7 @@ func (e exportLex) exec(vm *vm) {
 	level := int(e.idx >> 24)
 	idx := uint32(e.idx & 0x00FFFFFF)
 	stash := vm.stash
-	for i := 0; i < level; i++ {
+	for range level {
 		stash = stash.outer
 	}
 	e.callback(vm, func() Value {
@@ -2962,7 +2962,7 @@ func (vm *vm) setLocalLex(s int) {
 	level := s >> 24
 	idx := uint32(s & 0x00FFFFFF)
 	stash := vm.stash
-	for i := 0; i < level; i++ {
+	for range level {
 		stash = stash.outer
 	}
 	p := &stash.values[idx]
@@ -2978,7 +2978,7 @@ func (vm *vm) initLocal(s int) {
 	level := s >> 24
 	idx := uint32(s & 0x00FFFFFF)
 	stash := vm.stash
-	for i := 0; i < level; i++ {
+	for range level {
 		stash = stash.outer
 	}
 	stash.initByIdx(idx, v)
@@ -3026,7 +3026,7 @@ func (s initIndirect) exec(vm *vm) {
 	level := int(s.idx) >> 24
 	idx := uint32(s.idx & 0x00FFFFFF)
 	stash := vm.stash
-	for i := 0; i < level; i++ {
+	for range level {
 		stash = stash.outer
 	}
 	stash.initByIdx(idx, vm.r.ToValue(s.getter))
@@ -3196,7 +3196,7 @@ func (g loadStash) exec(vm *vm) {
 	level := int(g >> 24)
 	idx := uint32(g & 0x00FFFFFF)
 	stash := vm.stash
-	for i := 0; i < level; i++ {
+	for range level {
 		stash = stash.outer
 	}
 
@@ -3211,7 +3211,7 @@ func (g loadStashLex) exec(vm *vm) {
 	level := int(g >> 24)
 	idx := uint32(g & 0x00FFFFFF)
 	stash := vm.stash
-	for i := 0; i < level; i++ {
+	for range level {
 		stash = stash.outer
 	}
 
@@ -3238,7 +3238,7 @@ func (g *loadMixed) exec(vm *vm) {
 	idx := g.idx & 0x00FFFFFF
 	stash := vm.stash
 	name := g.name
-	for i := 0; i < level; i++ {
+	for range level {
 		if v, found := stash.getByName(name, g.strict); found {
 			if g.callee {
 				if stash.obj != nil {
@@ -3271,7 +3271,7 @@ func (g *loadMixedLex) exec(vm *vm) {
 	idx := g.idx & 0x00FFFFFF
 	stash := vm.stash
 	name := g.name
-	for i := 0; i < level; i++ {
+	for range level {
 		if v, found := stash.getByName(name, g.strict); found {
 			if g.callee {
 				if stash.obj != nil {
@@ -3317,7 +3317,7 @@ func (g *loadMixedStack) exec(vm *vm) {
 	stash := vm.stash
 	name := g.name
 	level := int(g.level)
-	for i := 0; i < level; i++ {
+	for range level {
 		if v, found := stash.getByName(name, g.strict); found {
 			if g.callee {
 				if stash.obj != nil {
@@ -3344,7 +3344,7 @@ func (g *loadMixedStack1) exec(vm *vm) {
 	stash := vm.stash
 	name := g.name
 	level := int(g.level)
-	for i := 0; i < level; i++ {
+	for range level {
 		if v, found := stash.getByName(name, g.strict); found {
 			if g.callee {
 				if stash.obj != nil {
@@ -3376,7 +3376,7 @@ func (g *loadMixedStackLex) exec(vm *vm) {
 	stash := vm.stash
 	name := g.name
 	level := int(g.level)
-	for i := 0; i < level; i++ {
+	for range level {
 		if v, found := stash.getByName(name, g.strict); found {
 			if g.callee {
 				if stash.obj != nil {
@@ -3403,7 +3403,7 @@ func (g *loadMixedStack1Lex) exec(vm *vm) {
 	stash := vm.stash
 	name := g.name
 	level := int(g.level)
-	for i := 0; i < level; i++ {
+	for range level {
 		if v, found := stash.getByName(name, g.strict); found {
 			if g.callee {
 				if stash.obj != nil {
@@ -3443,21 +3443,15 @@ func newStashRef(typ varType, name unistring.String, v *[]Value, idx int) ref {
 		}
 	case varTypeLet:
 		return &stashRefLex{
-			stashRef: stashRef{
-				n:   name,
-				v:   v,
-				idx: idx,
-			},
+			n:   name,
+			v:   v,
+			idx: idx,
 		}
 	case varTypeConst, varTypeStrictConst:
 		return &stashRefConst{
-			stashRefLex: stashRefLex{
-				stashRef: stashRef{
-					n:   name,
-					v:   v,
-					idx: idx,
-				},
-			},
+			n:           name,
+			v:           v,
+			idx:         idx,
 			strictConst: typ == varTypeStrictConst,
 		}
 	}
@@ -3469,7 +3463,7 @@ func (r *resolveMixed) exec(vm *vm) {
 	idx := r.idx & 0x00FFFFFF
 	stash := vm.stash
 	var ref ref
-	for i := 0; i < level; i++ {
+	for range level {
 		ref = stash.getRefByName(r.name, r.strict)
 		if ref != nil {
 			goto end
@@ -3507,7 +3501,7 @@ func (r *resolveMixedStack) exec(vm *vm) {
 	stash := vm.stash
 	var ref ref
 	var idx int
-	for i := 0; i < level; i++ {
+	for range level {
 		ref = stash.getRefByName(r.name, r.strict)
 		if ref != nil {
 			goto end
@@ -3532,7 +3526,7 @@ func (r *resolveMixedStack1) exec(vm *vm) {
 	level := int(r.level)
 	stash := vm.stash
 	var ref ref
-	for i := 0; i < level; i++ {
+	for range level {
 		ref = stash.getRefByName(r.name, r.strict)
 		if ref != nil {
 			goto end
@@ -3935,9 +3929,7 @@ func (e *enterFunc) exec(vm *vm) {
 	if len(e.names) > 0 {
 		if e.extensible {
 			m := make(map[unistring.String]uint32, len(e.names))
-			for name, idx := range e.names {
-				m[name] = idx
-			}
+			maps.Copy(m, e.names)
 			stash.names = m
 		} else {
 			stash.names = e.names
@@ -4004,9 +3996,7 @@ func (e *enterFunc1) exec(vm *vm) {
 	if len(e.names) > 0 {
 		if e.extensible {
 			m := make(map[unistring.String]uint32, len(e.names))
-			for name, idx := range e.names {
-				m[name] = idx
-			}
+			maps.Copy(m, e.names)
 			stash.names = m
 		} else {
 			stash.names = e.names
@@ -4051,9 +4041,7 @@ func (e *enterFuncBody) exec(vm *vm) {
 		if len(e.names) > 0 {
 			if e.extensible {
 				m := make(map[unistring.String]uint32, len(e.names))
-				for name, idx := range e.names {
-					m[name] = idx
-				}
+				maps.Copy(m, e.names)
 				stash.names = m
 			} else {
 				stash.names = e.names
@@ -4134,10 +4122,6 @@ func (e *enterFuncStashless) exec(vm *vm) {
 	vm.pc++
 }
 
-type newFuncInstruction interface {
-	getPrg() *Program
-}
-
 type newFunc struct {
 	prg    *Program
 	name   unistring.String
@@ -4155,10 +4139,6 @@ func (n *newFunc) exec(vm *vm) {
 	obj.src = n.source
 	vm.push(obj.val)
 	vm.pc++
-}
-
-func (n *newFunc) getPrg() *Program {
-	return n.prg
 }
 
 type newAsyncFunc struct {
@@ -5186,7 +5166,7 @@ func (_loadDynamicImport) exec(vm *vm) {
 			})
 			rejectionClosure := vm.r.ToValue(func(call FunctionCall) Value {
 				v := call.Argument(0)
-				if v.ExportType() == reflect.TypeOf(&Exception{}) {
+				if v.ExportType() == reflect.TypeFor[*Exception]() {
 					v = v.Export().(*Exception).Value()
 				}
 
@@ -5244,18 +5224,13 @@ func (formalArgs createArgsMapped) exec(vm *vm) {
 	args.length = vm.args
 	args.init()
 	i := 0
-	c := int(formalArgs)
-	if vm.args < c {
-		c = vm.args
-	}
+	c := min(vm.args, int(formalArgs))
 	for ; i < c; i++ {
 		args._put(unistring.String(strconv.Itoa(i)), &mappedProperty{
-			valueProperty: valueProperty{
-				writable:     true,
-				configurable: true,
-				enumerable:   true,
-			},
-			v: &vm.stash.values[i],
+			writable:     true,
+			configurable: true,
+			enumerable:   true,
+			v:            &vm.stash.values[i],
 		})
 	}
 
@@ -5275,10 +5250,7 @@ type createArgsUnmapped uint32
 func (formalArgs createArgsUnmapped) exec(vm *vm) {
 	args := vm.r.newBaseObject(vm.r.global.ObjectPrototype, "Arguments")
 	i := 0
-	c := int(formalArgs)
-	if vm.args < c {
-		c = vm.args
-	}
+	c := min(vm.args, int(formalArgs))
 	for _, v := range vm.stash.values[:c] {
 		args._put(unistring.String(strconv.Itoa(i)), v)
 		i++
@@ -5526,7 +5498,6 @@ func (copyStash) exec(vm *vm) {
 	newStash := &stash{
 		outer: oldStash.outer,
 	}
-	vm.stashAllocs++
 	newStash.values = append([]Value(nil), oldStash.values...)
 	newStash.names = oldStash.names
 	vm.stash = newStash
@@ -5885,7 +5856,7 @@ func (vm *vm) getStashPtr(s uint32) *Value {
 	level := int(s) >> 24
 	idx := s & 0x00FFFFFF
 	stash := vm.stash
-	for i := 0; i < level; i++ {
+	for range level {
 		stash = stash.outer
 	}
 
@@ -5909,7 +5880,7 @@ func (getThisDynamic) exec(vm *vm) {
 }
 
 type throwConst struct {
-	v interface{}
+	v any
 }
 
 func (t throwConst) exec(vm *vm) {
@@ -5929,7 +5900,7 @@ func (r resolveThisStash) exec(vm *vm) {
 	level := int(r) >> 24
 	idx := r & 0x00FFFFFF
 	stash := vm.stash
-	for i := 0; i < level; i++ {
+	for range level {
 		stash = stash.outer
 	}
 	vm.refStack = append(vm.refStack, &thisRef{v: &stash.values, idx: int(idx)})
@@ -6091,7 +6062,7 @@ type getPrivatePropRes resolvedPrivateName
 
 func (vm *vm) getPrivateType(level uint8, isStatic bool) *privateEnvType {
 	e := vm.privEnv
-	for i := uint8(0); i < level; i++ {
+	for range level {
 		e = e.outer
 	}
 	if isStatic {
@@ -6192,7 +6163,7 @@ func (vm *vm) setPrivateProp(base Value, name unistring.String, typ *privateEnvT
 	}
 }
 
-func (vm *vm) exceptionFromValue(x interface{}) *Exception {
+func (vm *vm) exceptionFromValue(x any) *Exception {
 	var ex *Exception
 	switch x1 := x.(type) {
 	case *Object:
@@ -6234,13 +6205,6 @@ func (vm *vm) exceptionFromValue(x interface{}) *Exception {
 			return nil
 		}
 	default:
-		/*
-			if vm.prg != nil {
-				vm.prg.dumpCode(log.Printf)
-			}
-			log.Print("Stack: ", string(debug.Stack()))
-			panic(fmt.Errorf("Panic at %d: %v", vm.pc, x))
-		*/
 		return nil
 	}
 	if ex.stack == nil {

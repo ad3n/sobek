@@ -240,7 +240,7 @@ func (r *Runtime) builtin_escape(call FunctionCall) Value {
 	s := call.Argument(0).toString()
 	var sb strings.Builder
 	l := s.Length()
-	for i := 0; i < l; i++ {
+	for i := range l {
 		r := s.CharAt(i)
 		if r >= 'A' && r <= 'Z' || r >= 'a' && r <= 'z' || r >= '0' && r <= '9' ||
 			r == '@' || r == '*' || r == '_' || r == '+' || r == '-' || r == '.' || r == '/' {
@@ -569,7 +569,7 @@ func init() {
 		uriReserved[c] = true
 	}
 
-	for i := 0; i < 256; i++ {
+	for i := range 256 {
 		if uriUnescaped[i] || uriReserved[i] {
 			uriReservedUnescapedHash[i] = true
 		}

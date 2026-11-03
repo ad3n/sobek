@@ -159,7 +159,7 @@ func TestSetExportToArrayMismatchedLengths(t *testing.T) {
 
 func TestSetExportToNilMap(t *testing.T) {
 	vm := New()
-	var m map[int]interface{}
+	var m map[int]any
 	res, err := vm.RunString("new Set([1])")
 	if err != nil {
 		t.Fatal(err)
@@ -178,7 +178,7 @@ func TestSetExportToNilMap(t *testing.T) {
 
 func TestSetExportToNonNilMap(t *testing.T) {
 	vm := New()
-	m := map[int]interface{}{
+	m := map[int]any{
 		2: true,
 	}
 	res, err := vm.RunString("new Set([1])")

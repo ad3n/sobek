@@ -124,8 +124,8 @@ func TestGoMapReflectProto(t *testing.T) {
 	}
 }
 
-type gomapReflect_noMethods map[string]interface{}
-type gomapReflect_withMethods map[string]interface{}
+type gomapReflect_noMethods map[string]any
+type gomapReflect_withMethods map[string]any
 
 func (m gomapReflect_withMethods) Method() bool {
 	return true
@@ -296,7 +296,7 @@ func TestGoMapReflectStruct(t *testing.T) {
 }
 
 func TestGoMapReflectElt(t *testing.T) {
-	type mapping map[string]interface{}
+	type mapping map[string]any
 
 	const SCRIPT = `a.s() && a.t === null && a.t1 === undefined;`
 

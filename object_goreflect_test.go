@@ -602,7 +602,7 @@ func TestGoReflectCustomNaming(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if !reflect.DeepEqual(v.Export(), []interface{}{"b"}) {
+		if !reflect.DeepEqual(v.Export(), []any{"b"}) {
 			t.Fatalf("Expected [\"b\"], got %v", v.Export())
 		}
 	})
@@ -913,12 +913,10 @@ func BenchmarkGoReflectGet(b *testing.B) {
 		Test6 string
 	}
 
-	b.StopTimer()
 	vm := New()
 
-	b.StartTimer()
-	for i := 0; i < b.N; i++ {
-		v := vm.ToValue(child{parent: parent{Test: "Test", field: ""}}).(*Object)
+	for b.Loop() {
+		v := vm.ToValue(child{Test: "Test", field: ""}).(*Object)
 		v.Get("Test")
 	}
 }
@@ -1188,9 +1186,9 @@ func TestGoObj__Proto__(t *testing.T) {
 	}
 	vm := New()
 	vm.Set("s", S{})
-	vm.Set("m", map[string]interface{}{})
+	vm.Set("m", map[string]any{})
 	vm.Set("mr", map[int]string{})
-	vm.Set("a", []interface{}{})
+	vm.Set("a", []any{})
 	vm.Set("ar", []string{})
 	_, err := vm.RunString(`
 	function f(s, expectedCtor, prefix) {
@@ -1320,10 +1318,10 @@ func TestReflectSetReflectValue(t *testing.T) {
 func TestReflectOverwriteReflectMap(t *testing.T) {
 	vm := New()
 	type S struct {
-		M map[int]interface{}
+		M map[int]any
 	}
 	var s S
-	s.M = map[int]interface{}{
+	s.M = map[int]any{
 		0: true,
 	}
 	vm.Set("s", &s)
@@ -1633,8 +1631,8 @@ func TestGoReflectUnexportedEmbedStruct(t *testing.T) {
 
 	vm := New()
 	vm.Set("foo", Foo{
-		privateEmbed:  privateEmbed{A: "testA"},
-		PublicEmbed:   PublicEmbed{B: "testB"},
+		A:             "testA",
+		B:             "testB",
 		privateNested: privateNested{C: "testC"},
 		PublicNested:  PublicNested{D: "testD"},
 		e:             "testE",

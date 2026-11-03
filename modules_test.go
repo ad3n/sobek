@@ -307,13 +307,11 @@ func TestSimpleModule(t *testing.T) {
 		},
 	}
 	for name, cases := range testCases {
-		cases := cases
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 			fn := runModules(t, cases)
 
-			for i := 0; i < 10; i++ {
-				i := i
+			for i := range 10 {
 				t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
 					t.Parallel()
 					vm := New()
@@ -338,8 +336,8 @@ func runModules(t testing.TB, files map[string]string) func(*Runtime) *Promise {
 	}
 	mu := sync.Mutex{}
 	cache := make(map[string]cacheElement)
-	var hostResolveImportedModule func(referencingScriptOrModule interface{}, specifier string) (ModuleRecord, error)
-	hostResolveImportedModule = func(_ interface{}, specifier string) (ModuleRecord, error) {
+	var hostResolveImportedModule func(referencingScriptOrModule any, specifier string) (ModuleRecord, error)
+	hostResolveImportedModule = func(_ any, specifier string) (ModuleRecord, error) {
 		mu.Lock()
 		defer mu.Unlock()
 		k, ok := cache[specifier]
@@ -386,7 +384,7 @@ func runModules(t testing.TB, files map[string]string) func(*Runtime) *Promise {
 
 	return func(vm *Runtime) *Promise {
 		eventLoopQueue := make(chan func(), 2) // the most basic and likely buggy event loop
-		vm.SetImportModuleDynamically(func(referencingScriptOrModule interface{}, specifierValue Value, pcap interface{}) {
+		vm.SetImportModuleDynamically(func(referencingScriptOrModule any, specifierValue Value, pcap any) {
 			specifier := specifierValue.String()
 
 			eventLoopQueue <- func() {
@@ -565,5 +563,35 @@ func TestModuleAsyncInterrupt(t *testing.T) {
 	}
 	if shouldntHappen {
 		t.Fatal("code was supposed to be interrupted but that din't work")
+	}
+}
+
+func TestModuleNamespaceScopeLookup(t *testing.T) {
+	r := New()
+	m, err := ParseModule("answer.js", "export let answer = 41; export function next() { answer++ }", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := m.Link(); err != nil {
+		t.Fatal(err)
+	}
+
+	if p := m.Evaluate(r); p.State() != PromiseStateFulfilled {
+		t.Fatalf("module evaluation: %v", p.Result())
+	}
+
+	if err := r.Set("ns", r.NamespaceObjectFor(m)); err != nil {
+		t.Fatal(err)
+	}
+
+	v, err := r.RunString(`
+		let before;
+		with (ns) { before = answer; next() }
+		Object.setPrototypeOf(globalThis, ns);
+		before === 41 && answer === 42 && typeof missing === "undefined"
+	`)
+	if err != nil || !v.ToBoolean() {
+		t.Fatalf("namespace binding lookup: %v, %v", v, err)
 	}
 }

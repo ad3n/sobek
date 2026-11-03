@@ -37,14 +37,14 @@ func TestMapHash(t *testing.T) {
 
 func TestOrderedMap(t *testing.T) {
 	m := newOrderedMap(&maphash.Hash{})
-	for i := int64(0); i < 50; i++ {
+	for i := range int64(50) {
 		m.set(intToValue(i), asciiString(strconv.FormatInt(i, 10)))
 	}
 	if m.size != 50 {
 		t.Fatalf("Unexpected size: %d", m.size)
 	}
 
-	for i := int64(0); i < 50; i++ {
+	for i := range int64(50) {
 		expected := asciiString(strconv.FormatInt(i, 10))
 		actual := m.get(intToValue(i))
 		if !expected.SameAs(actual) {

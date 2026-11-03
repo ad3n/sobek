@@ -39,7 +39,7 @@ func TestProfiler(t *testing.T) {
 	}
 
 	var running bool
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		time.Sleep(10 * time.Millisecond)
 		globalProfiler.p.mu.Lock()
 		running = globalProfiler.p.running
@@ -69,7 +69,7 @@ func TestProfiler1(t *testing.T) {
 		// Spawn new vms faster than once every 10ms (the profiler interval) and make sure they don't finish too soon.
 		// This means (*profiler).run() won't be fast enough to collect the samples, so they must be collected
 		// after the profiler is stopped.
-		for i := 0; i < 500; i++ {
+		for range 500 {
 			go func() {
 				vm := New()
 				vm.Set("sleep", sleep)

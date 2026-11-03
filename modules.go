@@ -2,10 +2,11 @@ package sobek
 
 import (
 	"errors"
+	"slices"
 	"sort"
 )
 
-type HostResolveImportedModuleFunc func(referencingScriptOrModule interface{}, specifier string) (ModuleRecord, error)
+type HostResolveImportedModuleFunc func(referencingScriptOrModule any, specifier string) (ModuleRecord, error)
 
 // TODO most things here probably should be unexported and names should be revised before merged in master
 // Record should probably be dropped from everywhere
@@ -48,7 +49,7 @@ type (
 	CyclicModuleInstance interface {
 		ModuleInstance
 		HasTLA() bool
-		ExecuteModule(rt *Runtime, res, rej func(interface{}) error) (CyclicModuleInstance, error)
+		ExecuteModule(rt *Runtime, res, rej func(any) error) (CyclicModuleInstance, error)
 	}
 )
 
@@ -114,7 +115,7 @@ func (c *compiler) innerModuleLinking(state *linkState, m ModuleRecord, stack *[
 		return 0, err
 	}
 	if state.dfsAncestorIndex[module] == state.dfsIndex[module] {
-		for i := len(*stack) - 1; i >= 0; i-- {
+		for i := range slices.Backward(*stack) {
 			requiredModule := (*stack)[i]
 			*stack = (*stack)[:i]
 			state.status[requiredModule] = Linked
@@ -134,7 +135,7 @@ type evaluationState struct {
 	cycleRoot                map[ModuleInstance]CyclicModuleInstance
 	asyncEvaluation          map[CyclicModuleInstance]uint64
 	asyncParentModules       map[CyclicModuleInstance][]CyclicModuleInstance
-	evaluationError          map[CyclicModuleInstance]interface{}
+	evaluationError          map[CyclicModuleInstance]any
 	topLevelCapability       map[CyclicModuleRecord]*promiseCapability
 
 	asyncEvaluationCounter uint64
@@ -149,7 +150,7 @@ func newEvaluationState() *evaluationState {
 		cycleRoot:                make(map[ModuleInstance]CyclicModuleInstance),
 		asyncEvaluation:          make(map[CyclicModuleInstance]uint64),
 		asyncParentModules:       make(map[CyclicModuleInstance][]CyclicModuleInstance),
-		evaluationError:          make(map[CyclicModuleInstance]interface{}),
+		evaluationError:          make(map[CyclicModuleInstance]any),
 		topLevelCapability:       make(map[CyclicModuleRecord]*promiseCapability),
 	}
 }
@@ -284,7 +285,7 @@ func (r *Runtime) innerModuleEvaluation(
 	}
 
 	if state.dfsAncestorIndex[c] == state.dfsIndex[c] {
-		for i := len(*stack) - 1; i >= 0; i-- {
+		for i := range slices.Backward(*stack) {
 			requiredModuleInstance := (*stack)[i]
 			*stack = (*stack)[:i]
 			if state.asyncEvaluation[requiredModuleInstance] == 0 {
@@ -358,12 +359,7 @@ func (r *Runtime) asyncModuleExecutionFulfilled(state *evaluationState, c Cyclic
 
 func (r *Runtime) gatherAvailableAncestors(state *evaluationState, c CyclicModuleInstance, execList *[]CyclicModuleInstance) {
 	contains := func(m CyclicModuleInstance) bool {
-		for _, l := range *execList {
-			if l == m {
-				return true
-			}
-		}
-		return false
+		return slices.Contains(*execList, m)
 	}
 	for _, m := range state.asyncParentModules[c] {
 		if contains(m) || state.evaluationError[m] != nil {
@@ -379,7 +375,7 @@ func (r *Runtime) gatherAvailableAncestors(state *evaluationState, c CyclicModul
 	}
 }
 
-func (r *Runtime) asyncModuleExecutionRejected(state *evaluationState, c CyclicModuleInstance, ex interface{}) {
+func (r *Runtime) asyncModuleExecutionRejected(state *evaluationState, c CyclicModuleInstance, ex any) {
 	if state.status[c] == Evaluated {
 		return
 	}
@@ -404,12 +400,12 @@ func (r *Runtime) findModuleRecord(i ModuleInstance) ModuleRecord {
 	panic("this should never happen")
 }
 
-func (r *Runtime) GetActiveScriptOrModule() interface{} { // have some better type
+func (r *Runtime) GetActiveScriptOrModule() any { // have some better type
 	if r.vm.prg != nil && r.vm.prg.scriptOrModule != nil {
 		return r.vm.prg.scriptOrModule
 	}
-	for i := len(r.vm.callStack) - 1; i >= 0; i-- {
-		prg := r.vm.callStack[i].prg
+	for _, v := range slices.Backward(r.vm.callStack) {
+		prg := v.prg
 		if prg != nil && prg.scriptOrModule != nil {
 			return prg.scriptOrModule
 		}
@@ -458,14 +454,14 @@ func (r *Runtime) SetFinalImportMeta(fn func(*Object, ModuleRecord)) {
 }
 
 // TODO fix signature
-type ImportModuleDynamicallyCallback func(referencingScriptOrModule interface{}, specifier Value, promiseCapability interface{})
+type ImportModuleDynamicallyCallback func(referencingScriptOrModule any, specifier Value, promiseCapability any)
 
 func (r *Runtime) SetImportModuleDynamically(callback ImportModuleDynamicallyCallback) {
 	r.importModuleDynamically = callback
 }
 
 // TODO figure out whether Result should be an Option thing :shrug:
-func (r *Runtime) FinishLoadingImportModule(referrer interface{}, specifier Value, payload interface{}, result ModuleRecord, err interface{}) {
+func (r *Runtime) FinishLoadingImportModule(referrer any, specifier Value, payload any, result ModuleRecord, err any) {
 	// https://262.ecma-international.org/14.0/#sec-FinishLoadingImportedModule
 	// if err == nil {
 	// a. a. If referrer.[[LoadedModules]] contains a Record whose [[Specifier]] is specifier, then
@@ -480,7 +476,7 @@ func (r *Runtime) FinishLoadingImportModule(referrer interface{}, specifier Valu
 	r.continueDynamicImport(payload.(*promiseCapability), result, err) // TODO better type inferance
 }
 
-func (r *Runtime) continueDynamicImport(promiseCapability *promiseCapability, result ModuleRecord, err interface{}) {
+func (r *Runtime) continueDynamicImport(promiseCapability *promiseCapability, result ModuleRecord, err any) {
 	// https://262.ecma-international.org/14.0/#sec-ContinueDynamicImport
 	if err != nil {
 		promiseCapability.reject(r.ToValue(err))

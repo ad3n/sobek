@@ -472,7 +472,7 @@ func (s asciiString) string() unistring.String {
 	return unistring.String(s)
 }
 
-func (s asciiString) Export() interface{} {
+func (s asciiString) Export() any {
 	return string(s)
 }
 

@@ -232,7 +232,7 @@ func (d *destructKeyedSource) iterateKeys() iterNextFunc {
 	}).next
 }
 
-func (d *destructKeyedSource) export(ctx *objectExportCtx) interface{} {
+func (d *destructKeyedSource) export(ctx *objectExportCtx) any {
 	return d.w().export(ctx)
 }
 

@@ -1,5 +1,4 @@
 //go:build race
-// +build race
 
 package sobek
 
@@ -21,7 +20,6 @@ func (ctx *tc39TestCtx) runTest(name string, f func(t *testing.T)) {
 func (ctx *tc39TestCtx) flush() {
 	ctx.t.Run("tc39", func(t *testing.T) {
 		for _, tc := range ctx.testQueue {
-			tc := tc
 			t.Run(tc.name, func(t *testing.T) {
 				t.Parallel()
 				tc.f(t)

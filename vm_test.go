@@ -113,7 +113,7 @@ func BenchmarkVmNOP2(b *testing.B) {
 	vm := r.vm
 	vm.prg = &Program{}
 
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		vm.pc = 0
 		for !vm.halted() {
 			prg[vm.pc](vm)
@@ -141,7 +141,7 @@ func BenchmarkVmNOP(b *testing.B) {
 		},
 	}
 
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		vm.pc = 0
 		vm.run()
 	}
@@ -165,7 +165,7 @@ func BenchmarkVm1(b *testing.B) {
 		},
 	}
 
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		vm.pc = 0
 		vm.run()
 		r := vm.pop()
@@ -211,7 +211,6 @@ fib(35);
 	v := vm.result
 
 	b.Logf("stack size: %d", len(vm.stack))
-	b.Logf("stashAllocs: %d", vm.stashAllocs)
 
 	if !v.SameAs(expectedResult) {
 		b.Fatalf("Result: %+v, expected: %+v", v, expectedResult)
@@ -227,12 +226,11 @@ func BenchmarkEmptyLoop(b *testing.B) {
 	}
 	f()
 	`
-	b.StopTimer()
+
 	vm := New()
 	prg := MustCompile("test.js", SCRIPT, false)
-	// prg.dumpCode(log.Printf)
-	b.StartTimer()
-	for i := 0; i < b.N; i++ {
+
+	for b.Loop() {
 		vm.RunProgram(prg)
 	}
 }
@@ -245,7 +243,7 @@ func BenchmarkVMAdd(b *testing.B) {
 	var v1 Value = valueInt(3)
 	var v2 Value = valueInt(5)
 
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		vm.stack[0] = v1
 		vm.stack[1] = v2
 		add.exec(vm)
@@ -259,15 +257,13 @@ func BenchmarkFuncCall(b *testing.B) {
 	}
 	`
 
-	b.StopTimer()
-
 	vm := New()
 	prg := MustCompile("test.js", SCRIPT, false)
 
 	vm.RunProgram(prg)
 	if f, ok := AssertFunction(vm.Get("f")); ok {
-		b.StartTimer()
-		for i := 0; i < b.N; i++ {
+
+		for b.Loop() {
 			f(nil, nil, intToValue(1), intToValue(2), intToValue(3), intToValue(4), intToValue(5), intToValue(6))
 		}
 	} else {
@@ -277,7 +273,7 @@ func BenchmarkFuncCall(b *testing.B) {
 
 func BenchmarkAssertInt(b *testing.B) {
 	v := intToValue(42)
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		if i, ok := v.(valueInt); !ok || int64(i) != 42 {
 			b.Fatal()
 		}
@@ -287,7 +283,7 @@ func BenchmarkAssertInt(b *testing.B) {
 func BenchmarkLoadVal(b *testing.B) {
 	var ins instruction
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		ins = loadVal{valueInt(1)}
 		_ = ins
 	}

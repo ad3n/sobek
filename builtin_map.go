@@ -4,7 +4,7 @@ import (
 	"reflect"
 )
 
-var mapExportType = reflect.TypeOf([][2]interface{}{})
+var mapExportType = reflect.TypeFor[[][2]any]()
 
 type mapObject struct {
 	baseObject
@@ -55,15 +55,15 @@ func (mo *mapObject) exportType() reflect.Type {
 	return mapExportType
 }
 
-func (mo *mapObject) export(ctx *objectExportCtx) interface{} {
+func (mo *mapObject) export(ctx *objectExportCtx) any {
 	if v, exists := ctx.get(mo.val); exists {
 		return v
 	}
-	m := make([][2]interface{}, mo.m.size)
+	m := make([][2]any, mo.m.size)
 	ctx.put(mo.val, m)
 
 	iter := mo.m.newIter()
-	for i := 0; i < len(m); i++ {
+	for i := range m {
 		entry := iter.next()
 		if entry == nil {
 			break

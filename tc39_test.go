@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path"
+	"slices"
 	"sort"
 	"strings"
 	"sync"
@@ -354,12 +355,7 @@ func (pl *prefixList) Match(s string) bool {
 }
 
 func (m *tc39Meta) hasFlag(flag string) bool {
-	for _, f := range m.Flags {
-		if f == flag {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(m.Flags, flag)
 }
 
 func parseTC39File(name string) (*tc39Meta, string, error) {
@@ -444,8 +440,8 @@ func (ctx *tc39TestCtx) runTC39Test(name, src string, meta *tc39Meta, t testing.
 	cache := make(map[string]cacheElement)
 	mx := sync.Mutex{}
 
-	var hostResolveImportedModule func(referencingScriptOrModule interface{}, specifier string) (ModuleRecord, error)
-	hostResolveImportedModule = func(referencingScriptOrModule interface{}, specifier string) (ModuleRecord, error) {
+	var hostResolveImportedModule func(referencingScriptOrModule any, specifier string) (ModuleRecord, error)
+	hostResolveImportedModule = func(referencingScriptOrModule any, specifier string) (ModuleRecord, error) {
 		mx.Lock()
 		defer mx.Unlock()
 		fname := path.Join(ctx.base, path.Dir(name), specifier)
@@ -478,7 +474,7 @@ func (ctx *tc39TestCtx) runTC39Test(name, src string, meta *tc39Meta, t testing.
 
 	eventLoopQueue := make(chan func(), 10)
 	// Tests can use dynamic imports without listing the dynamic-import feature.
-	vm.importModuleDynamically = func(referencingScriptOrModule interface{}, specifierValue Value, pcap interface{}) {
+	vm.importModuleDynamically = func(referencingScriptOrModule any, specifierValue Value, pcap any) {
 		specifier := specifierValue.String()
 		m, err := hostResolveImportedModule(referencingScriptOrModule, specifier)
 		vm.FinishLoadingImportModule(referencingScriptOrModule, specifierValue, pcap, m, err)
@@ -551,8 +547,7 @@ func (ctx *tc39TestCtx) runTC39Test(name, src string, meta *tc39Meta, t testing.
 					t.Skip("Test threw IgnorableTestError")
 				}
 			}
-			exc := new(Exception)
-			if errors.As(err, &exc) {
+			if exc, ok := errors.AsType[*Exception](err); ok {
 				t.Fatalf("%s: %v", name, exc.String())
 			} else {
 				t.Fatalf("%s: %v", name, err)

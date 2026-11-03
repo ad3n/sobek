@@ -11,7 +11,7 @@ import (
 // setObject.export these recurse until the Go stack overflows, which is a
 // fatal error (the whole test binary dies), not a recoverable panic.
 func TestExportSelfContainingMapSet(t *testing.T) {
-	samePtr := func(a, b interface{}) bool {
+	samePtr := func(a, b any) bool {
 		return reflect.ValueOf(a).Pointer() == reflect.ValueOf(b).Pointer()
 	}
 
@@ -20,7 +20,7 @@ func TestExportSelfContainingMapSet(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		a, ok := v.Export().([]interface{})
+		a, ok := v.Export().([]any)
 		if !ok || len(a) != 1 {
 			t.Fatalf("unexpected export: %#v", v.Export())
 		}
@@ -34,7 +34,7 @@ func TestExportSelfContainingMapSet(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		m, ok := v.Export().([][2]interface{})
+		m, ok := v.Export().([][2]any)
 		if !ok || len(m) != 1 {
 			t.Fatalf("unexpected export: %#v", v.Export())
 		}
@@ -48,11 +48,11 @@ func TestExportSelfContainingMapSet(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		o, ok := v.Export().(map[string]interface{})
+		o, ok := v.Export().(map[string]any)
 		if !ok {
 			t.Fatalf("unexpected export: %#v", v.Export())
 		}
-		m := o["m"].([][2]interface{})
+		m := o["m"].([][2]any)
 		if !samePtr(m[0][1], o) {
 			t.Fatal("expected the map entry to be the exported object")
 		}
@@ -63,8 +63,8 @@ func TestExportSelfContainingMapSet(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		a := v.Export().([]interface{})
-		inner := a[0].([]interface{})
+		a := v.Export().([]any)
+		inner := a[0].([]any)
 		if !samePtr(inner[0], a) {
 			t.Fatal("expected the inner array to hold the exported set")
 		}
@@ -75,15 +75,15 @@ func TestExportSelfContainingMapSet(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		a := v.Export().([]interface{})
-		s := a[0].([]interface{})
+		a := v.Export().([]any)
+		s := a[0].([]any)
 		if !samePtr(s[0], s) {
 			t.Fatal("expected the set to contain itself")
 		}
 	})
 
 	t.Run("assignment to a Go struct field", func(t *testing.T) {
-		type rec struct{ After interface{} }
+		type rec struct{ After any }
 		r := New()
 		var target rec
 		_ = r.Set("r", &target)

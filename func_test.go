@@ -164,11 +164,11 @@ type testAsyncCtx struct {
 
 type testAsyncContextTracker struct {
 	ctx     *testAsyncCtx
-	logFunc func(...interface{})
+	logFunc func(...any)
 	resumed bool
 }
 
-func (s *testAsyncContextTracker) Grab() interface{} {
+func (s *testAsyncContextTracker) Grab() any {
 	ctx := s.ctx
 	if ctx != nil {
 		s.logFunc("Grab", ctx.group)
@@ -177,7 +177,7 @@ func (s *testAsyncContextTracker) Grab() interface{} {
 	return ctx
 }
 
-func (s *testAsyncContextTracker) Resumed(trackingObj interface{}) {
+func (s *testAsyncContextTracker) Resumed(trackingObj any) {
 	s.logFunc("Resumed", trackingObj)
 	if s.resumed {
 		panic("Nested Resumed() calls")

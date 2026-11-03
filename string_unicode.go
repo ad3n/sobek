@@ -328,10 +328,7 @@ func (b *StringBuilder) LikelyUnicode(extraLen int) {
 func (b *StringBuilder) switchToUnicode(extraLen int) {
 	if b.ascii() {
 		c := b.asciiBuilder.Cap()
-		newCap := b.asciiBuilder.Len() + extraLen
-		if newCap < c {
-			newCap = c
-		}
+		newCap := max(b.asciiBuilder.Len()+extraLen, c)
 		b.unicodeBuilder.Grow(newCap)
 		b.unicodeBuilder.writeASCIIString(b.asciiBuilder.String())
 		b.asciiBuilder.Reset()
@@ -930,7 +927,7 @@ func (s unicodeString) normalize(form norm.Form) String {
 	})
 }
 
-func (s unicodeString) Export() interface{} {
+func (s unicodeString) Export() any {
 	return s.String()
 }
 

@@ -14,6 +14,10 @@ import (
 	"github.com/grafana/sobek/unistring"
 )
 
+func newParser(filename, src string) *_parser {
+	return _newParser(filename, src, 1)
+}
+
 func firstErr(err error) error {
 	switch err := err.(type) {
 	case ErrorList:
@@ -59,7 +63,7 @@ func TestParseFile(t *testing.T) {
 
 func TestParseFunction(t *testing.T) {
 	tt(t, func() {
-		test := func(prm, bdy string, expect interface{}) *ast.FunctionLiteral {
+		test := func(prm, bdy string, expect any) *ast.FunctionLiteral {
 			function, err := ParseFunction(prm, bdy)
 			e1 := firstErr(err)
 			if e1 == nil {
@@ -88,7 +92,7 @@ func TestParseFunction(t *testing.T) {
 
 func TestParserErr(t *testing.T) {
 	tt(t, func() {
-		test := func(input string, expect interface{}) (*ast.Program, *_parser) {
+		test := func(input string, expect any) (*ast.Program, *_parser) {
 			parser := newParser("", input)
 			program, err := parser.parse()
 			e1 := firstErr(err)
@@ -548,7 +552,7 @@ func TestParserErr(t *testing.T) {
 
 func TestParser(t *testing.T) {
 	tt(t, func() {
-		test := func(source string, chk interface{}) *ast.Program {
+		test := func(source string, chk any) *ast.Program {
 			_, program, err := testParse(source)
 			e1 := firstErr(err)
 			if e1 == nil {
@@ -1170,13 +1174,13 @@ func TestNumberLiteralKind(t *testing.T) {
 
 func Test_parseNumberLiteral(t *testing.T) {
 	tt(t, func() {
-		testKind := func(input string, kind ast.NumberLiteralKind, expect interface{}) {
+		testKind := func(input string, kind ast.NumberLiteralKind, expect any) {
 			result, err := parseNumberLiteral(input, kind)
 			is(err, nil)
 			is(result, expect)
 		}
 
-		test := func(input string, expect interface{}) {
+		test := func(input string, expect any) {
 			testKind(input, ast.NumberLiteralPlain, expect)
 		}
 		test("0", int64(0))

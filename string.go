@@ -345,7 +345,7 @@ func devirtualizeString(s String) (asciiString, unicodeString) {
 	}
 }
 
-func unknownStringTypeErr(v Value) interface{} {
+func unknownStringTypeErr(v Value) any {
 	return newTypeError("Internal bug: unknown string type: %T", v)
 }
 

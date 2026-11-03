@@ -47,7 +47,7 @@ func TestDtostr(t *testing.T) {
 func BenchmarkDtostrSmall(b *testing.B) {
 	var buf [128]byte
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		FToStr(math.Pi, ModeStandardExponential, 0, buf[:0])
 	}
 }
@@ -55,7 +55,7 @@ func BenchmarkDtostrSmall(b *testing.B) {
 func BenchmarkDtostrShort(b *testing.B) {
 	var buf [128]byte
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		FToStr(3.1415, ModeStandard, 0, buf[:0])
 	}
 }
@@ -63,7 +63,7 @@ func BenchmarkDtostrShort(b *testing.B) {
 func BenchmarkDtostrFixed(b *testing.B) {
 	var buf [128]byte
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		FToStr(math.Pi, ModeFixed, 4, buf[:0])
 	}
 }
@@ -71,7 +71,7 @@ func BenchmarkDtostrFixed(b *testing.B) {
 func BenchmarkDtostrBig(b *testing.B) {
 	var buf [128]byte
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		FToStr(math.SmallestNonzeroFloat64, ModeExponential, 40, buf[:0])
 	}
 }
@@ -79,7 +79,7 @@ func BenchmarkDtostrBig(b *testing.B) {
 func BenchmarkAppendFloatBig(b *testing.B) {
 	var buf [128]byte
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		strconv.AppendFloat(buf[:0], math.SmallestNonzeroFloat64, 'e', 40, 64)
 	}
 }
@@ -87,7 +87,7 @@ func BenchmarkAppendFloatBig(b *testing.B) {
 func BenchmarkAppendFloatSmall(b *testing.B) {
 	var buf [128]byte
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		strconv.AppendFloat(buf[:0], math.Pi, 'e', -1, 64)
 	}
 }

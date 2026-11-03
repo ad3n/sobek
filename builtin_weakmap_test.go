@@ -230,9 +230,7 @@ func TestWeakMapSymbolKeyGarbageCollected(t *testing.T) {
 func TestWeakMapWellKnownSymbolKeyConcurrent(t *testing.T) {
 	var wg sync.WaitGroup
 	for range 4 {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			vm := New()
 			_, err := vm.RunString(`
 			for (var i = 0; i < 100; i++) {
@@ -246,7 +244,7 @@ func TestWeakMapWellKnownSymbolKeyConcurrent(t *testing.T) {
 			if err != nil {
 				t.Error(err)
 			}
-		}()
+		})
 	}
 	wg.Wait()
 }

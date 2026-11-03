@@ -24,6 +24,7 @@ func (r *Runtime) newRegexpObject(proto *Object) *regexpObject {
 func (r *Runtime) newRegExpp(pattern *regexpPattern, patternStr String, proto *Object) *regexpObject {
 	o := r.newRegexpObject(proto)
 
+	pattern.regexp2Wrapper.checkInterrupt = r.vm.checkInterrupt
 	o.pattern = pattern
 	o.source = patternStr
 
@@ -246,7 +247,6 @@ func compileRegexp(patternStr, flags string) (p *regexpPattern, err error) {
 	}
 
 	p = &regexpPattern{
-		src:            patternStr,
 		regexp2Wrapper: wrapper2,
 		global:         global,
 		ignoreCase:     ignoreCase,
@@ -423,6 +423,7 @@ func (r *Runtime) regexpproto_compile(call FunctionCall) Value {
 		if err != nil {
 			panic(r.newSyntaxError(err.Error()))
 		}
+		pattern.regexp2Wrapper.checkInterrupt = r.vm.checkInterrupt
 		this.pattern = pattern
 		this.source = source
 	exit:
@@ -444,18 +445,17 @@ func (r *Runtime) regexpproto_exec(call FunctionCall) Value {
 
 func (r *Runtime) regexpproto_test(call FunctionCall) Value {
 	thisObj := r.toObject(call.This)
-	s := call.Argument(0).toString()
+	arg := call.Argument(0)
+	s, ok := arg.(String)
+	if !ok {
+		s = arg.toString()
+	}
+
 	if this := r.checkStdRegexp(thisObj); this != nil {
-		if this.test(s) {
-			return valueTrue
-		} else {
-			return valueFalse
-		}
+		return r.toBoolean(this.test(s))
 	}
-	if regExpExec(thisObj, s) == _null {
-		return valueFalse
-	}
-	return valueTrue
+
+	return r.toBoolean(regExpExec(thisObj, s) != _null)
 }
 
 func (r *Runtime) regexpproto_toString(call FunctionCall) Value {
@@ -915,13 +915,10 @@ func (r *Runtime) regexpproto_stdSearch(call FunctionCall) Value {
 	previousLastIndex := rx.getStr("lastIndex", nil)
 	rx.setOwnStr("lastIndex", intToValue(0), true)
 
-	match, result := rx.execRegexp(s)
+	index := rx.execRegexp(s, nil)
 	rx.setOwnStr("lastIndex", previousLastIndex, true)
 
-	if !match {
-		return intToValue(-1)
-	}
-	return intToValue(int64(result.indexes[0]))
+	return intToValue(int64(index))
 }
 
 func (r *Runtime) regexpproto_stdSplitterGeneric(splitter *Object, s String, limit Value, unicodeMatching bool) Value {

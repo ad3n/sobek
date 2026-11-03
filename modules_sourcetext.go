@@ -22,7 +22,7 @@ type SourceTextModuleInstance struct {
 	asyncPromise  *Promise
 }
 
-func (s *SourceTextModuleInstance) ExecuteModule(rt *Runtime, res, rej func(interface{}) error) (CyclicModuleInstance, error) {
+func (s *SourceTextModuleInstance) ExecuteModule(rt *Runtime, res, rej func(any) error) (CyclicModuleInstance, error) {
 	promiseP := s.pcap.promise.self.(*Promise)
 	if len(promiseP.fulfillReactions) == 1 {
 		ar := promiseP.fulfillReactions[0].asyncRunner
@@ -397,7 +397,6 @@ func ParseModule(name, sourceText string, resolveModule HostResolveImportedModul
 	// TODO asserts
 	opts = append(opts, parser.IsModule)
 	body, err := Parse(name, sourceText, opts...)
-	_ = body
 	if err != nil {
 		return nil, err
 	}
@@ -409,9 +408,8 @@ func ModuleFromAST(body *ast.Program, resolveModule HostResolveImportedModuleFun
 	importEntries, err := importEntriesFromAst(body.ImportEntries)
 	if err != nil {
 		// TODO create a separate error type
-		return nil, &CompilerSyntaxError{CompilerError: CompilerError{
-			Message: err.Error(),
-		}}
+		return nil, &CompilerSyntaxError{
+			Message: err.Error()}
 	}
 	// 6. Let importedBoundNames be ImportedLocalNames(importEntries).
 	// ^ is skipped as we don't need it.
@@ -469,9 +467,7 @@ func ModuleFromAST(body *ast.Program, resolveModule HostResolveImportedModuleFun
 	for i := 1; i < len(names); i++ {
 		if names[i] == names[i-1] {
 			return nil, &CompilerSyntaxError{
-				CompilerError: CompilerError{
-					Message: fmt.Sprintf("Duplicate export name %s", names[i]),
-				},
+				Message: fmt.Sprintf("Duplicate export name %s", names[i]),
 			}
 		}
 		// TODO other checks

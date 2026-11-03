@@ -147,10 +147,10 @@ func (p *PropertyDescriptor) complete() {
 	}
 }
 
-type objectExportCacheItem map[reflect.Type]interface{}
+type objectExportCacheItem map[reflect.Type]any
 
 type objectExportCtx struct {
-	cache map[*Object]interface{}
+	cache map[*Object]any
 }
 
 type objectImpl interface {
@@ -206,7 +206,7 @@ type objectImpl interface {
 	isExtensible() bool
 	preventExtensions(throw bool) bool
 
-	export(ctx *objectExportCtx) interface{}
+	export(ctx *objectExportCtx) any
 	exportType() reflect.Type
 	exportToMap(m reflect.Value, typ reflect.Type, ctx *objectExportCtx) error
 	exportToArrayOrSlice(s reflect.Value, typ reflect.Type, ctx *objectExportCtx) error
@@ -251,7 +251,7 @@ type primitiveValueObject struct {
 	pValue Value
 }
 
-func (o *primitiveValueObject) export(*objectExportCtx) interface{} {
+func (o *primitiveValueObject) export(*objectExportCtx) any {
 	return o.pValue.Export()
 }
 
@@ -1043,12 +1043,12 @@ func (o *baseObject) swap(i int, j int) {
 	o.val.self.setOwnIdx(jj, x, false)
 }
 
-func (o *baseObject) export(ctx *objectExportCtx) interface{} {
+func (o *baseObject) export(ctx *objectExportCtx) any {
 	if v, exists := ctx.get(o.val); exists {
 		return v
 	}
 	keys := o.stringKeys(false, nil)
-	m := make(map[string]interface{}, len(keys))
+	m := make(map[string]any, len(keys))
 	ctx.put(o.val, m)
 	for _, itemName := range keys {
 		itemNameStr := itemName.String()
@@ -1156,7 +1156,7 @@ func exportToArrayOrSliceWithIterator(ir *iteratorRecord, o *Object, dst reflect
 			dst.Set(reflect.MakeSlice(typ, l, l))
 		}
 		ctx.putTyped(o, typ, dst.Interface())
-		for i := 0; i < l; i++ {
+		for i := range l {
 			val := nilSafe(o.self.getIdx(valueInt(i), nil))
 			err = r.toReflectValue(val, dst.Index(i), ctx)
 			if err != nil {
@@ -1760,7 +1760,7 @@ func (o *guardedObject) deleteStr(name unistring.String, throw bool) bool {
 	return res
 }
 
-func (ctx *objectExportCtx) get(key *Object) (interface{}, bool) {
+func (ctx *objectExportCtx) get(key *Object) (any, bool) {
 	if v, exists := ctx.cache[key]; exists {
 		if item, ok := v.(objectExportCacheItem); ok {
 			r, exists := item[key.self.exportType()]
@@ -1772,7 +1772,7 @@ func (ctx *objectExportCtx) get(key *Object) (interface{}, bool) {
 	return nil, false
 }
 
-func (ctx *objectExportCtx) getTyped(key *Object, typ reflect.Type) (interface{}, bool) {
+func (ctx *objectExportCtx) getTyped(key *Object, typ reflect.Type) (any, bool) {
 	if v, exists := ctx.cache[key]; exists {
 		if item, ok := v.(objectExportCacheItem); ok {
 			r, exists := item[typ]
@@ -1786,9 +1786,9 @@ func (ctx *objectExportCtx) getTyped(key *Object, typ reflect.Type) (interface{}
 	return nil, false
 }
 
-func (ctx *objectExportCtx) put(key *Object, value interface{}) {
+func (ctx *objectExportCtx) put(key *Object, value any) {
 	if ctx.cache == nil {
-		ctx.cache = make(map[*Object]interface{})
+		ctx.cache = make(map[*Object]any)
 	}
 	if item, ok := ctx.cache[key].(objectExportCacheItem); ok {
 		item[key.self.exportType()] = value
@@ -1797,9 +1797,9 @@ func (ctx *objectExportCtx) put(key *Object, value interface{}) {
 	}
 }
 
-func (ctx *objectExportCtx) putTyped(key *Object, typ reflect.Type, value interface{}) {
+func (ctx *objectExportCtx) putTyped(key *Object, typ reflect.Type, value any) {
 	if ctx.cache == nil {
-		ctx.cache = make(map[*Object]interface{})
+		ctx.cache = make(map[*Object]any)
 	}
 	v, exists := ctx.cache[key]
 	if exists {

@@ -1,7 +1,11 @@
 package sobek
 
 import (
+	stdctx "context"
+	"errors"
+	"sync"
 	"testing"
+	"time"
 )
 
 func TestRegexp1(t *testing.T) {
@@ -1053,14 +1057,14 @@ func BenchmarkRegexpSplitWithBackRef(b *testing.B) {
 	const SCRIPT = `
 	"aaaaaaaaaaaaaaaaaaaaaaaaa++bbbbbbbbbbbbbbbbbbbbbb+-ccccccccccccccccccccccc".split(/([+-])\1/)
 	`
-	b.StopTimer()
+
 	prg, err := Compile("test.js", SCRIPT, false)
 	if err != nil {
 		b.Fatal(err)
 	}
 	vm := New()
-	b.StartTimer()
-	for i := 0; i < b.N; i++ {
+
+	for b.Loop() {
 		vm.RunProgram(prg)
 	}
 }
@@ -1079,14 +1083,14 @@ func BenchmarkRegexpMatch(b *testing.B) {
          a\nb\r\c\nd\r\e\n\f\rg\nh\ra\nb\r\c\nd\r\e\n\f\rg\nh\ra\nb\r\c\nd\r\e\n\f\rg\nh\ra\nb\r\c\nd\r\e\n\f\rg\nh\r\
         ".match(/[^\r\n]+/g)
         `
-	b.StopTimer()
+
 	prg, err := Compile("test.js", SCRIPT, false)
 	if err != nil {
 		b.Fatal(err)
 	}
 	vm := New()
-	b.StartTimer()
-	for i := 0; i < b.N; i++ {
+
+	for b.Loop() {
 		vm.RunProgram(prg)
 	}
 }
@@ -1142,9 +1146,9 @@ func BenchmarkRegexpMatchCache(b *testing.B) {
 		b.Fatal(err)
 	}
 	if fn, ok := AssertFunction(v); ok {
-		b.ResetTimer()
+
 		b.ReportAllocs()
-		for i := 0; i < b.N; i++ {
+		for b.Loop() {
 			fn(_undefined)
 		}
 	} else {
@@ -1203,9 +1207,9 @@ func BenchmarkRegexpMatchAll(b *testing.B) {
 		b.Fatal(err)
 	}
 	if fn, ok := AssertFunction(v); ok {
-		b.ResetTimer()
+
 		b.ReportAllocs()
-		for i := 0; i < b.N; i++ {
+		for b.Loop() {
 			fn(_undefined)
 		}
 	} else {
@@ -1226,9 +1230,9 @@ func BenchmarkRegexpSingleExec(b *testing.B) {
 			b.Fatal("RegExp.exec is not a function")
 		}
 		arg := vm.ToValue(str)
-		b.ResetTimer()
+
 		b.ReportAllocs()
-		for i := 0; i < b.N; i++ {
+		for b.Loop() {
 			_, err := exec(r, arg)
 			if err != nil {
 				b.Fatal(err)
@@ -1252,4 +1256,140 @@ func BenchmarkRegexpSingleExec(b *testing.B) {
 		f("(?=)test", "aaaaaaaaaaaaaaaaaaaaaaaaa testing 😀", b)
 	})
 
+}
+
+func TestInterruptRegexpMatching(t *testing.T) {
+	for _, source := range []string{
+		`re = /^(a+)+$/; re.test(input)`,
+		`re = new RegExp("^(a+)+$", "u"); re.exec(input)`,
+		`re = /^(a+)+$/g; input.replace(re, "")`,
+		`re = /x/; re.compile("^(a+)+$", "gu"); input.match(re)`,
+	} {
+		t.Run(source, func(t *testing.T) {
+			r := New()
+			var timer *time.Timer
+			done := make(chan struct{})
+			err := r.Set("begin", func() {
+				timer = time.AfterFunc(10*time.Millisecond, func() {
+					r.Interrupt(stdctx.DeadlineExceeded)
+					close(done)
+				})
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			start := time.Now()
+			_, err = r.RunString(`let re, input = "a".repeat(26) + "é"; begin(); try { ` + source + ` } catch (_) { "caught" }`)
+			if timer == nil {
+				t.Fatalf("match did not start: %v", err)
+			}
+
+			if !timer.Stop() {
+				<-done
+			}
+
+			if _, ok := errors.AsType[*InterruptedError](err); !ok || !errors.Is(err, stdctx.DeadlineExceeded) {
+				t.Fatalf("expected uncatchable deadline interrupt, got %v", err)
+			}
+
+			if elapsed := time.Since(start); elapsed > time.Second {
+				t.Fatalf("interrupted match took %v", elapsed)
+			}
+
+			r.ClearInterrupt()
+			v, err := r.RunString(`re.test("aaa")`)
+			if err != nil || !v.ToBoolean() {
+				t.Fatalf("reuse after interrupt: %v, %v", v, err)
+			}
+		})
+	}
+}
+
+func TestInterruptRegexpSharedProgram(t *testing.T) {
+	program, err := Compile("shared.js", `/^(a+)+$/`, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	blocked, other := New(), New()
+	for _, r := range []*Runtime{blocked, other} {
+		value, err := r.RunProgram(program)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if err := r.Set("pattern", value); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	wrapper := blocked.Get("pattern").(*Object).self.(*regexpObject).pattern.regexp2Wrapper
+	check := wrapper.checkInterrupt
+	entered, resume := make(chan struct{}), make(chan struct{})
+	var once sync.Once
+	wrapper.checkInterrupt = func() {
+		once.Do(func() {
+			close(entered)
+			<-resume
+		})
+		check()
+	}
+
+	done := make(chan error, 1)
+	go func() {
+		_, err := blocked.RunString(`pattern.test("aaaa!")`)
+		done <- err
+	}()
+
+	select {
+	case <-entered:
+	case err := <-done:
+		t.Fatalf("matcher never observed VM: %v", err)
+	}
+
+	blocked.Interrupt(stdctx.Canceled)
+	value, otherErr := other.RunString(`pattern.test("aaaa")`)
+	close(resume)
+	if err := <-done; !errors.Is(err, stdctx.Canceled) {
+		t.Fatalf("interrupted runtime: %v", err)
+	}
+
+	if otherErr != nil || !value.ToBoolean() {
+		t.Fatalf("independent runtime: %v, %v", value, otherErr)
+	}
+}
+
+func BenchmarkRegexpTestASCIIIdentifiers(b *testing.B) {
+	r := New()
+	pattern, err := r.RunString(`/^[0-9a-f-]{36}$/`)
+	if err != nil {
+		b.Fatal(err)
+	}
+
+	ids := [2]Value{asciiString("12345678-1234-1234-1234-123456789abc"), asciiString("12345678-1234-1234-1234-123456789def")}
+	call := FunctionCall{This: pattern, Arguments: []Value{ids[0]}}
+	b.ReportAllocs()
+	i := 0
+	for b.Loop() {
+		call.Arguments[0] = ids[i]
+		i ^= 1
+		if r.regexpproto_test(call) != valueTrue {
+			b.Fatal("expected valid identifier")
+		}
+	}
+}
+
+func TestRegexpCacheAcrossEqualLengthInputs(t *testing.T) {
+	testScript(`
+		const re = /(?<id>[a-z]+)/y;
+		const first = re.exec("ab12");
+		re.lastIndex = 0;
+		const second = re.test("cd34");
+		const end = re.lastIndex;
+		const missed = re.test("ef56");
+		second && end === 2 && !missed && re.lastIndex === 0 &&
+			first[0] === "ab" && first.groups.id === "ab" && first.input === "ab12" &&
+			re.exec("gh78").groups.id === "gh";
+	`, valueTrue, t)
 }

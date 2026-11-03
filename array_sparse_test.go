@@ -220,7 +220,7 @@ func TestArraySparseExportProps(t *testing.T) {
 		t.Fatal(err)
 	}
 	actual := arr.Export()
-	if actualArr, ok := actual.([]interface{}); ok {
+	if actualArr, ok := actual.([]any); ok {
 		if len(actualArr) == 20472 {
 			expectedIdx := map[int]struct{}{
 				0:     {},
@@ -275,7 +275,7 @@ func TestSparseArrayExportToSlice(t *testing.T) {
 	if e := exp[20471]; e != 220471 {
 		t.Fatalf("20471: %d", e)
 	}
-	for i := 0; i < 20470; i++ {
+	for i := range 20470 {
 		if exp[i] != 0 {
 			t.Fatalf("at %d: %d", i, exp[i])
 		}

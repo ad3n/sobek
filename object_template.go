@@ -68,12 +68,10 @@ func (r *Runtime) newTemplatedObject(tmpl *objectTemplate, obj *Object) *templat
 		obj = &Object{runtime: r}
 	}
 	o := &templatedObject{
-		baseObject: baseObject{
-			class:      classObject,
-			val:        obj,
-			extensible: true,
-		},
-		tmpl: tmpl,
+		class:      classObject,
+		val:        obj,
+		extensible: true,
+		tmpl:       tmpl,
 	}
 	obj.self = o
 	o.init()
@@ -177,12 +175,8 @@ func (o *templatedObject) proto() *Object {
 }
 
 func (o *templatedObject) setProto(proto *Object, throw bool) bool {
-	o.protoMaterialised = true
-	ret := o.baseObject.setProto(proto, throw)
-	if ret {
-		o.protoMaterialised = true
-	}
-	return ret
+	o.materialiseProto()
+	return o.baseObject.setProto(proto, throw)
 }
 
 func (o *templatedObject) setForeignIdx(name valueInt, val, receiver Value, throw bool) (bool, bool) {
@@ -281,6 +275,11 @@ func (o *templatedObject) materialiseProps() {
 	o.materialisePropNames()
 }
 
+func (o *templatedObject) export(ctx *objectExportCtx) any {
+	o.materialiseProps()
+	return o.baseObject.export(ctx)
+}
+
 func (o *templatedObject) iterateStringKeys() iterNextFunc {
 	o.materialiseProps()
 	return o.baseObject.iterateStringKeys()
@@ -314,16 +313,12 @@ func (r *Runtime) newTemplatedFuncObject(tmpl *objectTemplate, obj *Object, f fu
 		obj = &Object{runtime: r}
 	}
 	o := &templatedFuncObject{
-		templatedObject: templatedObject{
-			baseObject: baseObject{
-				class:      classFunction,
-				val:        obj,
-				extensible: true,
-			},
-			tmpl: tmpl,
-		},
-		f:         f,
-		construct: ctor,
+		class:      classFunction,
+		val:        obj,
+		extensible: true,
+		tmpl:       tmpl,
+		f:          f,
+		construct:  ctor,
 	}
 	obj.self = o
 	o.init()
@@ -334,7 +329,7 @@ func (f *templatedFuncObject) source() String {
 	return newStringValue(fmt.Sprintf("function %s() { [native code] }", nilSafe(f.getStr("name", nil)).toString()))
 }
 
-func (f *templatedFuncObject) export(*objectExportCtx) interface{} {
+func (f *templatedFuncObject) export(*objectExportCtx) any {
 	return f.f
 }
 
@@ -372,14 +367,10 @@ func (r *Runtime) newTemplatedArrayObject(tmpl *objectTemplate, obj *Object) *te
 		obj = &Object{runtime: r}
 	}
 	o := &templatedArrayObject{
-		templatedObject: templatedObject{
-			baseObject: baseObject{
-				class:      classArray,
-				val:        obj,
-				extensible: true,
-			},
-			tmpl: tmpl,
-		},
+		class:      classArray,
+		val:        obj,
+		extensible: true,
+		tmpl:       tmpl,
 	}
 	obj.self = o
 	o.init()

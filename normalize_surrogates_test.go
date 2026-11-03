@@ -78,8 +78,8 @@ func BenchmarkNormalize(b *testing.B) {
 			r := New()
 			call := FunctionCall{This: tc.text, Arguments: []Value{asciiString("NFC")}}
 			b.ReportAllocs()
-			b.ResetTimer()
-			for i := 0; i < b.N; i++ {
+
+			for b.Loop() {
 				normalizeBenchmarkResult = r.stringproto_normalize(call)
 			}
 		})

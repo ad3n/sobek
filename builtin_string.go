@@ -305,7 +305,7 @@ func (r *Runtime) stringproto_endsWith(call FunctionCall) Value {
 	if start < 0 {
 		return valueFalse
 	}
-	for i := 0; i < searchLength; i++ {
+	for i := range searchLength {
 		if s.CharAt(start+i) != searchStr.CharAt(i) {
 			return valueFalse
 		}
@@ -578,7 +578,7 @@ func (r *Runtime) stringproto_repeat(call FunctionCall) Value {
 	if u == nil {
 		var sb strings.Builder
 		sb.Grow(safeMul(len(a), num))
-		for i := 0; i < num; i++ {
+		for range num {
 			sb.WriteString(string(a))
 		}
 		return asciiString(sb.String())
@@ -586,7 +586,7 @@ func (r *Runtime) stringproto_repeat(call FunctionCall) Value {
 
 	var sb unicodeStringBuilder
 	sb.Grow(safeMul(u.Length(), num))
-	for i := 0; i < num; i++ {
+	for range num {
 		sb.writeUnicodeString(u)
 	}
 	return sb.String()
@@ -621,7 +621,7 @@ func (r *Runtime) stringReplace(s String, found []regexpResult, newstring String
 			}
 			matchCount := len(item.indexes) / 2
 			argumentList := make([]Value, matchCount+2, matchCount+3)
-			for index := 0; index < matchCount; index++ {
+			for index := range matchCount {
 				offset := 2 * index
 				if item.indexes[offset] != -1 {
 					if u == nil {
@@ -956,7 +956,7 @@ func (r *Runtime) stringproto_startsWith(call FunctionCall) Value {
 	if int64(searchLength+start) > l {
 		return valueFalse
 	}
-	for i := 0; i < searchLength; i++ {
+	for i := range searchLength {
 		if s.CharAt(start+i) != searchStr.CharAt(i) {
 			return valueFalse
 		}

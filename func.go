@@ -47,8 +47,8 @@ var (
 //
 // To register it call Runtime.SetAsyncContextTracker().
 type AsyncContextTracker interface {
-	Grab() (trackingObject interface{})
-	Resumed(trackingObject interface{})
+	Grab() (trackingObject any)
+	Resumed(trackingObject any)
 	Exited()
 }
 
@@ -165,7 +165,7 @@ func (f *nativeFuncObject) source() String {
 	return newStringValue(fmt.Sprintf("function %s() { [native code] }", nilSafe(f.getStr("name", nil)).toString()))
 }
 
-func (f *nativeFuncObject) export(*objectExportCtx) interface{} {
+func (f *nativeFuncObject) export(*objectExportCtx) any {
 	return f.f
 }
 
@@ -173,7 +173,7 @@ func (f *wrappedFuncObject) exportType() reflect.Type {
 	return f.wrapped.Type()
 }
 
-func (f *wrappedFuncObject) export(*objectExportCtx) interface{} {
+func (f *wrappedFuncObject) export(*objectExportCtx) any {
 	return f.wrapped.Interface()
 }
 
@@ -307,7 +307,7 @@ func (f *classFuncObject) Construct(ccall ConstructorCall) *Object {
 	return f.construct(ccall.Arguments, ccall.NewTarget)
 }
 
-func (f *classFuncObject) export(*objectExportCtx) interface{} {
+func (f *classFuncObject) export(*objectExportCtx) any {
 	return f.Construct
 }
 
@@ -470,7 +470,7 @@ func (f *baseJsFuncObject) call(call FunctionCall, newTarget Value) Value {
 	return f._call(call.Arguments, newTarget, nilSafe(call.This))
 }
 
-func (f *baseJsFuncObject) export(*objectExportCtx) interface{} {
+func (f *baseJsFuncObject) export(*objectExportCtx) any {
 	return f.Call
 }
 
@@ -515,7 +515,7 @@ func (f *arrowFuncObject) vmCall(vm *vm, n int) {
 	vm.newTarget = f.newTarget
 }
 
-func (f *arrowFuncObject) export(*objectExportCtx) interface{} {
+func (f *arrowFuncObject) export(*objectExportCtx) any {
 	return f.Call
 }
 
@@ -640,7 +640,7 @@ func (f *asyncFuncObject) assertCallable() (func(FunctionCall) Value, bool) {
 	return f.Call, true
 }
 
-func (f *asyncFuncObject) export(*objectExportCtx) interface{} {
+func (f *asyncFuncObject) export(*objectExportCtx) any {
 	return f.Call
 }
 
@@ -652,7 +652,7 @@ func (f *asyncArrowFuncObject) assertCallable() (func(FunctionCall) Value, bool)
 	return f.Call, true
 }
 
-func (f *asyncArrowFuncObject) export(*objectExportCtx) interface{} {
+func (f *asyncArrowFuncObject) export(*objectExportCtx) any {
 	return f.Call
 }
 
@@ -668,7 +668,7 @@ func (f *asyncMethodFuncObject) assertCallable() (func(FunctionCall) Value, bool
 	return f.Call, true
 }
 
-func (f *asyncMethodFuncObject) export(ctx *objectExportCtx) interface{} {
+func (f *asyncMethodFuncObject) export(ctx *objectExportCtx) any {
 	return f.Call
 }
 
@@ -891,7 +891,7 @@ func (g *generator) next(v Value) (Value, resultType, *Exception) {
 	return res, done, ex
 }
 
-func (g *generator) nextThrow(v interface{}) (Value, resultType, *Exception) {
+func (g *generator) nextThrow(v any) (Value, resultType, *Exception) {
 	g.enterNext()
 	ex := g.vm.handleThrow(v)
 	if ex != nil {
@@ -1180,11 +1180,9 @@ func (f *baseJsFuncObject) generatorCall(vmCall func(*vm, int), nArgs int) Value
 	o := &Object{runtime: f.val.runtime}
 
 	genObj := &generatorObject{
-		baseObject: baseObject{
-			class:      classObject,
-			val:        o,
-			extensible: true,
-		},
+		class:      classObject,
+		val:        o,
+		extensible: true,
 	}
 	o.self = genObj
 	genObj.init(vmCall, nArgs)
@@ -1211,7 +1209,7 @@ func (f *generatorFuncObject) assertCallable() (func(FunctionCall) Value, bool) 
 	return f.Call, true
 }
 
-func (f *generatorFuncObject) export(*objectExportCtx) interface{} {
+func (f *generatorFuncObject) export(*objectExportCtx) any {
 	return f.Call
 }
 
@@ -1232,6 +1230,6 @@ func (f *generatorMethodFuncObject) assertCallable() (func(FunctionCall) Value, 
 	return f.Call, true
 }
 
-func (f *generatorMethodFuncObject) export(*objectExportCtx) interface{} {
+func (f *generatorMethodFuncObject) export(*objectExportCtx) any {
 	return f.Call
 }

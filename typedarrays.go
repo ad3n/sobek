@@ -22,7 +22,7 @@ const (
 var (
 	nativeEndian byteOrder
 
-	arrayBufferType = reflect.TypeOf(ArrayBuffer{})
+	arrayBufferType = reflect.TypeFor[ArrayBuffer]()
 )
 
 type typedArrayObjectCtor func(buf *arrayBufferObject, offset, length int, proto *Object) *typedArrayObject
@@ -61,7 +61,7 @@ type typedArray interface {
 	includes(v Value, start, length int) bool
 	// fill fills [start, start+length) with the value converted to the array's element type.
 	fill(v Value, start, length int)
-	export(offset int, length int) interface{}
+	export(offset int, length int) any
 	exportType() reflect.Type
 }
 
@@ -318,7 +318,7 @@ func (a *uint8Array) fill(v Value, start, length int) {
 	fillSlice(unsafe.Slice(a.ptr(start), length), toUint8(v))
 }
 
-func (a *uint8Array) export(offset int, length int) interface{} {
+func (a *uint8Array) export(offset int, length int) any {
 	return unsafe.Slice(a.ptr(offset), length)
 }
 
@@ -375,7 +375,7 @@ func (a *uint8ClampedArray) fill(v Value, start, length int) {
 	fillSlice(unsafe.Slice(a.ptr(start), length), toUint8Clamp(v))
 }
 
-func (a *uint8ClampedArray) export(offset int, length int) interface{} {
+func (a *uint8ClampedArray) export(offset int, length int) any {
 	return unsafe.Slice(a.ptr(offset), length)
 }
 
@@ -437,11 +437,11 @@ func (a *int8Array) fill(v Value, start, length int) {
 	fillSlice(unsafe.Slice(a.ptr(start), length), toInt8(v))
 }
 
-func (a *int8Array) export(offset int, length int) interface{} {
+func (a *int8Array) export(offset int, length int) any {
 	return unsafe.Slice(a.ptr(offset), length)
 }
 
-var typeInt8Array = reflect.TypeOf(([]int8)(nil))
+var typeInt8Array = reflect.TypeFor[[]int8]()
 
 func (a *int8Array) exportType() reflect.Type {
 	return typeInt8Array
@@ -493,9 +493,9 @@ func (a *uint16Array) fill(v Value, start, length int) {
 	fillSlice(unsafe.Slice(a.ptr(start), length), toUint16(v))
 }
 
-var typeUint16Array = reflect.TypeOf(([]uint16)(nil))
+var typeUint16Array = reflect.TypeFor[[]uint16]()
 
-func (a *uint16Array) export(offset int, length int) interface{} {
+func (a *uint16Array) export(offset int, length int) any {
 	return unsafe.Slice(a.ptr(offset), length)
 }
 
@@ -549,11 +549,11 @@ func (a *int16Array) fill(v Value, start, length int) {
 	fillSlice(unsafe.Slice(a.ptr(start), length), toInt16(v))
 }
 
-func (a *int16Array) export(offset int, length int) interface{} {
+func (a *int16Array) export(offset int, length int) any {
 	return unsafe.Slice(a.ptr(offset), length)
 }
 
-var typeInt16Array = reflect.TypeOf(([]int16)(nil))
+var typeInt16Array = reflect.TypeFor[[]int16]()
 
 func (a *int16Array) exportType() reflect.Type {
 	return typeInt16Array
@@ -605,11 +605,11 @@ func (a *uint32Array) fill(v Value, start, length int) {
 	fillSlice(unsafe.Slice(a.ptr(start), length), toUint32(v))
 }
 
-func (a *uint32Array) export(offset int, length int) interface{} {
+func (a *uint32Array) export(offset int, length int) any {
 	return unsafe.Slice(a.ptr(offset), length)
 }
 
-var typeUint32Array = reflect.TypeOf(([]uint32)(nil))
+var typeUint32Array = reflect.TypeFor[[]uint32]()
 
 func (a *uint32Array) exportType() reflect.Type {
 	return typeUint32Array
@@ -661,11 +661,11 @@ func (a *int32Array) fill(v Value, start, length int) {
 	fillSlice(unsafe.Slice(a.ptr(start), length), toInt32(v))
 }
 
-func (a *int32Array) export(offset int, length int) interface{} {
+func (a *int32Array) export(offset int, length int) any {
 	return unsafe.Slice(a.ptr(offset), length)
 }
 
-var typeInt32Array = reflect.TypeOf(([]int32)(nil))
+var typeInt32Array = reflect.TypeFor[[]int32]()
 
 func (a *int32Array) exportType() reflect.Type {
 	return typeInt32Array
@@ -752,11 +752,11 @@ func (a *float32Array) fill(v Value, start, length int) {
 	fillSlice(unsafe.Slice(a.ptr(start), length), toFloat32(v))
 }
 
-func (a *float32Array) export(offset int, length int) interface{} {
+func (a *float32Array) export(offset int, length int) any {
 	return unsafe.Slice(a.ptr(offset), length)
 }
 
-var typeFloat32Array = reflect.TypeOf(([]float32)(nil))
+var typeFloat32Array = reflect.TypeFor[[]float32]()
 
 func (a *float32Array) exportType() reflect.Type {
 	return typeFloat32Array
@@ -811,12 +811,7 @@ func (a *float64Array) includes(v Value, start, length int) bool {
 	s := unsafe.Slice(a.ptr(start), length)
 	f := v.ToFloat()
 	if math.IsNaN(f) {
-		for _, e := range s {
-			if math.IsNaN(e) {
-				return true
-			}
-		}
-		return false
+		return slices.ContainsFunc(s, math.IsNaN)
 	}
 	return slices.Contains(s, f)
 }
@@ -825,11 +820,11 @@ func (a *float64Array) fill(v Value, start, length int) {
 	fillSlice(unsafe.Slice(a.ptr(start), length), v.ToFloat())
 }
 
-func (a *float64Array) export(offset int, length int) interface{} {
+func (a *float64Array) export(offset int, length int) any {
 	return unsafe.Slice(a.ptr(offset), length)
 }
 
-var typeFloat64Array = reflect.TypeOf(([]float64)(nil))
+var typeFloat64Array = reflect.TypeFor[[]float64]()
 
 func (a *float64Array) exportType() reflect.Type {
 	return typeFloat64Array
@@ -897,11 +892,11 @@ func (a *bigInt64Array) fill(v Value, start, length int) {
 	fillSlice(unsafe.Slice(a.ptr(start), length), toBigInt64(v).Int64())
 }
 
-func (a *bigInt64Array) export(offset int, length int) interface{} {
+func (a *bigInt64Array) export(offset int, length int) any {
 	return unsafe.Slice(a.ptr(offset), length)
 }
 
-var typeBigInt64Array = reflect.TypeOf(([]int64)(nil))
+var typeBigInt64Array = reflect.TypeFor[[]int64]()
 
 func (a *bigInt64Array) exportType() reflect.Type {
 	return typeBigInt64Array
@@ -964,11 +959,11 @@ func (a *bigUint64Array) fill(v Value, start, length int) {
 	fillSlice(unsafe.Slice(a.ptr(start), length), toBigUint64(v).Uint64())
 }
 
-func (a *bigUint64Array) export(offset int, length int) interface{} {
+func (a *bigUint64Array) export(offset int, length int) any {
 	return unsafe.Slice(a.ptr(offset), length)
 }
 
-var typeBigUint64Array = reflect.TypeOf(([]uint64)(nil))
+var typeBigUint64Array = reflect.TypeFor[[]uint64]()
 
 func (a *bigUint64Array) exportType() reflect.Type {
 	return typeBigUint64Array
@@ -1237,7 +1232,7 @@ func (a *typedArrayObject) exportToArrayOrSlice(dst reflect.Value, typ reflect.T
 	return a.baseObject.exportToArrayOrSlice(dst, typ, ctx)
 }
 
-func (a *typedArrayObject) export(_ *objectExportCtx) interface{} {
+func (a *typedArrayObject) export(_ *objectExportCtx) any {
 	return a.typedArray.export(a.offset, a.length)
 }
 
@@ -1256,12 +1251,10 @@ func (o *dataViewObject) exportToArrayOrSlice(dst reflect.Value, typ reflect.Typ
 func (r *Runtime) _newTypedArrayObject(buf *arrayBufferObject, offset, length, elemSize int, defCtor *Object, arr typedArray, proto *Object) *typedArrayObject {
 	o := &Object{runtime: r}
 	a := &typedArrayObject{
-		baseObject: baseObject{
-			val:        o,
-			class:      classObject,
-			prototype:  proto,
-			extensible: true,
-		},
+		val:            o,
+		class:          classObject,
+		prototype:      proto,
+		extensible:     true,
 		viewedArrayBuf: buf,
 		offset:         offset,
 		length:         length,
@@ -1518,7 +1511,7 @@ func (o *arrayBufferObject) exportType() reflect.Type {
 	return arrayBufferType
 }
 
-func (o *arrayBufferObject) export(*objectExportCtx) interface{} {
+func (o *arrayBufferObject) export(*objectExportCtx) any {
 	return ArrayBuffer{
 		buf: o,
 	}
@@ -1537,12 +1530,10 @@ func (r *Runtime) _newArrayBuffer(proto *Object, o *Object) *arrayBufferObject {
 		o = &Object{runtime: r}
 	}
 	b := &arrayBufferObject{
-		baseObject: baseObject{
-			class:      classObject,
-			val:        o,
-			prototype:  proto,
-			extensible: true,
-		},
+		class:      classObject,
+		val:        o,
+		prototype:  proto,
+		extensible: true,
 	}
 	o.self = b
 	b.init()

@@ -179,7 +179,7 @@ func TestExportCircular(t *testing.T) {
 	o := vm.NewObject()
 	o.Set("o", o)
 	v := o.Export()
-	if m, ok := v.(map[string]interface{}); ok {
+	if m, ok := v.(map[string]any); ok {
 		if reflect.ValueOf(m["o"]).Pointer() != reflect.ValueOf(v).Pointer() {
 			t.Fatal("Unexpected value")
 		}
@@ -192,7 +192,7 @@ func TestExportCircular(t *testing.T) {
 		t.Fatal(err)
 	}
 	v = res.Export()
-	if a, ok := v.([]interface{}); ok {
+	if a, ok := v.([]any); ok {
 		if reflect.ValueOf(a[0]).Pointer() != reflect.ValueOf(v).Pointer() {
 			t.Fatal("Unexpected value")
 		}
@@ -212,7 +212,7 @@ func TestExportToCircular(t *testing.T) {
 	vm := New()
 	o := vm.NewObject()
 	o.Set("o", o)
-	var m map[string]interface{}
+	var m map[string]any
 	err := vm.ExportTo(o, &m)
 	if err != nil {
 		t.Fatal(err)
@@ -252,7 +252,7 @@ func TestExportToCircular(t *testing.T) {
 	}
 
 	type test_s2 struct {
-		S  interface{}
+		S  any
 		S1 *test_s2
 	}
 
@@ -264,7 +264,7 @@ func TestExportToCircular(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if m, ok := s2.S.(map[string]interface{}); ok {
+	if m, ok := s2.S.(map[string]any); ok {
 		if reflect.ValueOf(m["S"]).Pointer() != reflect.ValueOf(m).Pointer() {
 			t.Fatal("Unexpected m.S")
 		}
@@ -289,11 +289,11 @@ func TestExportToCircular(t *testing.T) {
 
 func TestExportWrappedMap(t *testing.T) {
 	vm := New()
-	m := map[string]interface{}{
+	m := map[string]any{
 		"test": "failed",
 	}
 	exported := vm.ToValue(m).Export()
-	if exportedMap, ok := exported.(map[string]interface{}); ok {
+	if exportedMap, ok := exported.(map[string]any); ok {
 		exportedMap["test"] = "passed"
 		if v := m["test"]; v != "passed" {
 			t.Fatalf("Unexpected m[\"test\"]: %v", v)
@@ -305,10 +305,10 @@ func TestExportWrappedMap(t *testing.T) {
 
 func TestExportToWrappedMap(t *testing.T) {
 	vm := New()
-	m := map[string]interface{}{
+	m := map[string]any{
 		"test": "failed",
 	}
-	var exported map[string]interface{}
+	var exported map[string]any
 	err := vm.ExportTo(vm.ToValue(m), &exported)
 	if err != nil {
 		t.Fatal(err)
@@ -337,7 +337,7 @@ func TestExportToWrappedMapCustom(t *testing.T) {
 func TestExportToSliceNonIterable(t *testing.T) {
 	vm := New()
 	o := vm.NewObject()
-	var a []interface{}
+	var a []any
 	err := vm.ExportTo(o, &a)
 	if err == nil {
 		t.Fatal("Expected an error")
@@ -452,7 +452,7 @@ func TestExportIterableToArrayMismatchedLengths(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var a1 [3]interface{}
+	var a1 [3]any
 	err = vm.ExportTo(a, &a1)
 	if err == nil {
 		t.Fatal("expected error")
@@ -475,7 +475,7 @@ func TestExportArrayLikeToArrayMismatchedLengths(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var a1 [3]interface{}
+	var a1 [3]any
 	err = vm.ExportTo(a, &a1)
 	if err == nil {
 		t.Fatal("expected error")
@@ -588,7 +588,7 @@ func BenchmarkPut(b *testing.B) {
 	var key Value = asciiString("test")
 	var val Value = valueInt(123)
 
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		v.setOwn(key, val, false)
 	}
 }
@@ -607,7 +607,7 @@ func BenchmarkPutStr(b *testing.B) {
 
 	var val Value = valueInt(123)
 
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		o.setOwnStr("test", val, false)
 	}
 }
@@ -625,7 +625,7 @@ func BenchmarkGet(b *testing.B) {
 	v.self = o
 	var n Value = asciiString("test")
 
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		v.get(n, nil)
 	}
 
@@ -642,7 +642,7 @@ func BenchmarkGetStr(b *testing.B) {
 
 	o.init()
 
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		o.getStr("test", nil)
 	}
 }
@@ -659,7 +659,7 @@ func __toString(v Value) string {
 func BenchmarkToString1(b *testing.B) {
 	v := asciiString("test")
 
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		v.toString()
 	}
 }
@@ -667,14 +667,14 @@ func BenchmarkToString1(b *testing.B) {
 func BenchmarkToString2(b *testing.B) {
 	v := asciiString("test")
 
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		__toString(v)
 	}
 }
 
 func BenchmarkConv(b *testing.B) {
 	count := int64(0)
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		count += valueInt(123).ToInteger()
 	}
 	if count == 0 {
@@ -684,7 +684,7 @@ func BenchmarkConv(b *testing.B) {
 
 func BenchmarkToUTF8String(b *testing.B) {
 	var s String = asciiString("test")
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		_ = s.String()
 	}
 }
@@ -694,7 +694,7 @@ func BenchmarkAdd(b *testing.B) {
 	x = valueInt(2)
 	y = valueInt(2)
 
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		if xi, ok := x.(valueInt); ok {
 			if yi, ok := y.(valueInt); ok {
 				x = xi + yi
@@ -710,7 +710,7 @@ func BenchmarkAddString(b *testing.B) {
 	x = asciiString("2")
 	y = asciiString("2")
 
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		var z Value
 		if xi, ok := x.(String); ok {
 			if yi, ok := y.(String); ok {

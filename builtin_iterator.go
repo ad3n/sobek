@@ -2,6 +2,7 @@ package sobek
 
 import (
 	"math"
+	"slices"
 
 	"github.com/grafana/sobek/unistring"
 )
@@ -167,9 +168,9 @@ func (ir *iteratorRecord) stepDone() bool {
 // closeIterators implements IteratorCloseAll. The iterators are closed in reverse order, nil entries are skipped.
 // If ex is not nil, any errors thrown while closing are ignored and ex is re-thrown, otherwise the first error
 // (if any) is thrown after all the iterators have been closed.
-func closeIterators(iters []*iteratorRecord, ex interface{}) {
-	for i := len(iters) - 1; i >= 0; i-- {
-		if iter := iters[i]; iter != nil {
+func closeIterators(iters []*iteratorRecord, ex any) {
+	for _, iter := range slices.Backward(iters) {
+		if iter != nil {
 			if ex != nil {
 				_ = tryFunc(iter.returnIter)
 			} else {

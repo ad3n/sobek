@@ -15,7 +15,7 @@ type Proxy struct {
 }
 
 var (
-	proxyType = reflect.TypeOf(Proxy{})
+	proxyType = reflect.TypeFor[Proxy]()
 )
 
 type proxyPropIter struct {
@@ -828,7 +828,7 @@ func (p *proxyObject) proxyOwnKeys() ([]Value, bool) {
 		var keyList []Value
 		var keySet propNameSet
 		l := toLength(keys.self.getStr("length", nil))
-		for k := int64(0); k < l; k++ {
+		for k := range l {
 			item := keys.self.getIdx(valueInt(k), nil)
 			if _, ok := item.(String); !ok {
 				if _, ok := item.(*Symbol); !ok {
@@ -1048,7 +1048,7 @@ func (p *proxyObject) exportType() reflect.Type {
 	return proxyType
 }
 
-func (p *proxyObject) export(*objectExportCtx) interface{} {
+func (p *proxyObject) export(*objectExportCtx) any {
 	return Proxy{
 		proxy: p,
 	}

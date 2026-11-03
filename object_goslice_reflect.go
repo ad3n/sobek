@@ -31,10 +31,7 @@ func (o *objectGoSliceReflect) grow(size int) {
 		n := reflect.MakeSlice(o.fieldsValue.Type(), size, growCap(size, o.fieldsValue.Len(), oldcap))
 		reflect.Copy(n, o.fieldsValue)
 		o.fieldsValue.Set(n)
-		l := len(o.valueCache)
-		if l > size {
-			l = size
-		}
+		l := min(len(o.valueCache), size)
 		for i, w := range o.valueCache[:l] {
 			if w != nil {
 				w.setReflectValue(o.fieldsValue.Index(i))

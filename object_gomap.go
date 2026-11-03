@@ -8,7 +8,7 @@ import (
 
 type objectGoMapSimple struct {
 	baseObject
-	data map[string]interface{}
+	data map[string]any
 }
 
 func (o *objectGoMapSimple) init() {
@@ -149,7 +149,7 @@ func (o *objectGoMapSimple) stringKeys(_ bool, accum []Value) []Value {
 	return accum
 }
 
-func (o *objectGoMapSimple) export(*objectExportCtx) interface{} {
+func (o *objectGoMapSimple) export(*objectExportCtx) any {
 	return o.data
 }
 

@@ -114,7 +114,7 @@ func (v *valueBigInt) StrictEquals(other Value) bool {
 	return false
 }
 
-func (v *valueBigInt) Export() interface{} {
+func (v *valueBigInt) Export() any {
 	return new(big.Int).Set((*big.Int)(v))
 }
 

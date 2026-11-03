@@ -13,7 +13,7 @@ import (
 // JsonEncodable allows custom JSON encoding by JSON.stringify()
 // Note that if the returned value itself also implements JsonEncodable, it won't have any effect.
 type JsonEncodable interface {
-	JsonEncodable() interface{}
+	JsonEncodable() any
 }
 
 // FieldNameMapper provides custom mapping between Go and JavaScript property names.
@@ -114,7 +114,7 @@ type objectGoReflect struct {
 
 	toString, valueOf func() Value
 
-	toJson func() interface{}
+	toJson func() any
 }
 
 func (o *objectGoReflect) init() {
@@ -167,7 +167,7 @@ func (o *objectGoReflect) init() {
 		value := reflect.New(o.origValue.Type()).Elem()
 		value.Set(o.origValue)
 		o.origValue = value
-		if value.Kind() != reflect.Ptr {
+		if value.Kind() != reflect.Pointer {
 			o.fieldsValue = value
 		}
 	}
@@ -505,7 +505,7 @@ func (o *objectGoReflect) stringKeys(_ bool, accum []Value) []Value {
 	return accum
 }
 
-func (o *objectGoReflect) export(*objectExportCtx) interface{} {
+func (o *objectGoReflect) export(*objectExportCtx) any {
 	return o.origValue.Interface()
 }
 
@@ -542,7 +542,7 @@ func (o *objectGoReflect) esValue() Value {
 
 func (r *Runtime) buildFieldInfo(t reflect.Type, index []int, info *reflectFieldsInfo) {
 	n := t.NumField()
-	for i := 0; i < n; i++ {
+	for i := range n {
 		field := t.Field(i)
 		name := field.Name
 		isExported := ast.IsExported(name)
@@ -578,7 +578,7 @@ func (r *Runtime) buildFieldInfo(t reflect.Type, index []int, info *reflectField
 			}
 			if field.Anonymous {
 				typ := field.Type
-				for typ.Kind() == reflect.Ptr {
+				for typ.Kind() == reflect.Pointer {
 					typ = typ.Elem()
 				}
 				if typ.Kind() == reflect.Struct {
@@ -599,7 +599,7 @@ func (r *Runtime) buildMethodsInfo(t reflect.Type) (info *reflectMethodsInfo) {
 	info = new(reflectMethodsInfo)
 	info.Methods = make(map[string]int, n)
 	info.Names = make([]string, 0, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		method := t.Method(i)
 		name := method.Name
 		if !ast.IsExported(name) {

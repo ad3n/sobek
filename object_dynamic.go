@@ -103,11 +103,9 @@ makes it a lot more efficient.
 func (r *Runtime) NewDynamicObject(d DynamicObject) *Object {
 	v := &Object{runtime: r}
 	o := &dynamicObject{
-		d: d,
-		baseDynamicObject: baseDynamicObject{
-			val:       v,
-			prototype: r.global.ObjectPrototype,
-		},
+		d:         d,
+		val:       v,
+		prototype: r.global.ObjectPrototype,
 	}
 	v.self = o
 	return v
@@ -120,10 +118,8 @@ Runtimes. The Object's prototype will be null. The provided DynamicObject must b
 func NewSharedDynamicObject(d DynamicObject) *Object {
 	v := &Object{}
 	o := &dynamicObject{
-		d: d,
-		baseDynamicObject: baseDynamicObject{
-			val: v,
-		},
+		d:   d,
+		val: v,
 	}
 	v.self = o
 	return v
@@ -142,11 +138,9 @@ It is similar to NewDynamicObject, the differences are:
 func (r *Runtime) NewDynamicArray(a DynamicArray) *Object {
 	v := &Object{runtime: r}
 	o := &dynamicArray{
-		a: a,
-		baseDynamicObject: baseDynamicObject{
-			val:       v,
-			prototype: r.getArrayPrototype(),
-		},
+		a:         a,
+		val:       v,
+		prototype: r.getArrayPrototype(),
 	}
 	v.self = o
 	return v
@@ -160,10 +154,8 @@ The provided DynamicArray must be goroutine-safe.
 func NewSharedDynamicArray(a DynamicArray) *Object {
 	v := &Object{}
 	o := &dynamicArray{
-		a: a,
-		baseDynamicObject: baseDynamicObject{
-			val: v,
-		},
+		a:   a,
+		val: v,
 	}
 	v.self = o
 	return v
@@ -515,7 +507,7 @@ func (o *dynamicObject) iterateKeys() iterNextFunc {
 	return o.iterateStringKeys()
 }
 
-func (o *dynamicObject) export(ctx *objectExportCtx) interface{} {
+func (o *dynamicObject) export(ctx *objectExportCtx) any {
 	return o.d
 }
 
@@ -805,7 +797,7 @@ func (a *dynamicArray) iterateKeys() iterNextFunc {
 	return a.iterateStringKeys()
 }
 
-func (a *dynamicArray) export(ctx *objectExportCtx) interface{} {
+func (a *dynamicArray) export(ctx *objectExportCtx) any {
 	return a.a
 }
 
@@ -831,7 +823,7 @@ func (a *dynamicArray) stringKeys(all bool, accum []Value) []Value {
 		accum = make([]Value, len(oldAccum), l)
 		copy(accum, oldAccum)
 	}
-	for i := 0; i < al; i++ {
+	for i := range al {
 		accum = append(accum, asciiString(strconv.Itoa(i)))
 	}
 	if all {

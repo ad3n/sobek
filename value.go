@@ -45,17 +45,17 @@ var (
 )
 
 var (
-	reflectTypeInt      = reflect.TypeOf(int64(0))
+	reflectTypeInt      = reflect.TypeFor[int64]()
 	reflectTypeBool     = reflect.TypeOf(false)
 	reflectTypeNil      = reflect.TypeOf(nil)
-	reflectTypeFloat    = reflect.TypeOf(float64(0))
-	reflectTypeMap      = reflect.TypeOf(map[string]interface{}{})
-	reflectTypeArray    = reflect.TypeOf([]interface{}{})
-	reflectTypeArrayPtr = reflect.TypeOf((*[]interface{})(nil))
-	reflectTypeString   = reflect.TypeOf("")
+	reflectTypeFloat    = reflect.TypeFor[float64]()
+	reflectTypeMap      = reflect.TypeFor[map[string]any]()
+	reflectTypeArray    = reflect.TypeFor[[]any]()
+	reflectTypeArrayPtr = reflect.TypeFor[*[]any]()
+	reflectTypeString   = reflect.TypeFor[string]()
 	reflectTypeFunc     = reflect.TypeOf((func(FunctionCall) Value)(nil))
 	reflectTypeCtor     = reflect.TypeOf((func(ConstructorCall) *Object)(nil))
-	reflectTypeError    = reflect.TypeOf((*error)(nil)).Elem()
+	reflectTypeError    = reflect.TypeFor[error]()
 )
 
 var intCache [256]Value
@@ -88,7 +88,7 @@ type Value interface {
 	SameAs(Value) bool
 	Equals(Value) bool
 	StrictEquals(Value) bool
-	Export() interface{}
+	Export() any
 	ExportType() reflect.Type
 
 	baseObject(r *Runtime) *Object
@@ -252,7 +252,7 @@ func (i valueInt) baseObject(r *Runtime) *Object {
 	return r.getNumberPrototype()
 }
 
-func (i valueInt) Export() interface{} {
+func (i valueInt) Export() any {
 	return int64(i)
 }
 
@@ -346,7 +346,7 @@ func (b valueBool) baseObject(r *Runtime) *Object {
 	return r.getBooleanPrototype()
 }
 
-func (b valueBool) Export() interface{} {
+func (b valueBool) Export() any {
 	return bool(b)
 }
 
@@ -460,7 +460,7 @@ func (n valueNull) baseObject(*Runtime) *Object {
 	return nil
 }
 
-func (n valueNull) Export() interface{} {
+func (n valueNull) Export() any {
 	return nil
 }
 
@@ -557,7 +557,7 @@ func (p *valueProperty) baseObject(r *Runtime) *Object {
 	return nil
 }
 
-func (p *valueProperty) Export() interface{} {
+func (p *valueProperty) Export() any {
 	panic("Cannot export valueProperty")
 }
 
@@ -682,7 +682,7 @@ func (f valueFloat) baseObject(r *Runtime) *Object {
 	return r.getNumberPrototype()
 }
 
-func (f valueFloat) Export() interface{} {
+func (f valueFloat) Export() any {
 	return float64(f)
 }
 
@@ -773,9 +773,9 @@ func (o *Object) baseObject(*Runtime) *Object {
 // be used inside another ES function implemented in Go. For calling a function from Go, use AssertFunction() or
 // Runtime.ExportTo() as described in the README.
 //
-// For a Map, returns the list of entries as [][2]interface{}.
+// For a Map, returns the list of entries as [][2]any.
 //
-// For a Set, returns the list of elements as []interface{}.
+// For a Set, returns the list of elements as []any.
 //
 // For a Proxy, returns Proxy.
 //
@@ -785,12 +785,12 @@ func (o *Object) baseObject(*Runtime) *Object {
 //
 // For typed arrays it returns a slice of the corresponding type backed by the original data (i.e. it does not copy).
 //
-// For an untyped array, returns its items exported into a newly created []interface{}.
+// For an untyped array, returns its items exported into a newly created []any.
 //
-// In all other cases returns own enumerable non-symbol properties as map[string]interface{}.
+// In all other cases returns own enumerable non-symbol properties as map[string]any.
 //
 // This method will panic with an *Exception if a JavaScript exception is thrown in the process. Use Runtime.Try to catch these.
-func (o *Object) Export() interface{} {
+func (o *Object) Export() any {
 	return o.self.export(&objectExportCtx{})
 }
 
@@ -910,13 +910,13 @@ func (o *Object) DefineAccessorPropertySymbol(name *Symbol, getter, setter Value
 	})
 }
 
-func (o *Object) Set(name string, value interface{}) error {
+func (o *Object) Set(name string, value any) error {
 	return o.runtime.try(func() {
 		o.self.setOwnStr(unistring.NewFromString(name), o.runtime.ToValue(value), true)
 	})
 }
 
-func (o *Object) SetSymbol(name *Symbol, value interface{}) error {
+func (o *Object) SetSymbol(name *Symbol, value any) error {
 	return o.runtime.try(func() {
 		o.self.setOwnSym(name, o.runtime.ToValue(value), true)
 	})
@@ -1046,7 +1046,7 @@ func (o valueUnresolved) baseObject(*Runtime) *Object {
 	return nil
 }
 
-func (o valueUnresolved) Export() interface{} {
+func (o valueUnresolved) Export() any {
 	o.throw()
 	return nil
 }
@@ -1122,7 +1122,7 @@ func (s *Symbol) StrictEquals(o Value) bool {
 	return s.SameAs(o)
 }
 
-func (s *Symbol) Export() interface{} {
+func (s *Symbol) Export() any {
 	return s.String()
 }
 
@@ -1154,7 +1154,7 @@ func (s *Symbol) getWeakMapRefs(create bool) *weakMapRefs {
 	return refs
 }
 
-func exportValue(v Value, ctx *objectExportCtx) interface{} {
+func exportValue(v Value, ctx *objectExportCtx) any {
 	if obj, ok := v.(*Object); ok {
 		return obj.self.export(ctx)
 	}
@@ -1194,7 +1194,7 @@ func funcName(prefix string, n Value) String {
 	return b.String()
 }
 
-func newTypeError(args ...interface{}) typeError {
+func newTypeError(args ...any) typeError {
 	msg := ""
 	if len(args) > 0 {
 		f, _ := args[0].(string)
@@ -1203,7 +1203,7 @@ func newTypeError(args ...interface{}) typeError {
 	return typeError(msg)
 }
 
-func typeErrorResult(throw bool, args ...interface{}) {
+func typeErrorResult(throw bool, args ...any) {
 	if throw {
 		panic(newTypeError(args...))
 	}
@@ -1211,7 +1211,7 @@ func typeErrorResult(throw bool, args ...interface{}) {
 }
 
 func init() {
-	for i := 0; i < 256; i++ {
+	for i := range 256 {
 		intCache[i] = valueInt(i - 256)
 	}
 }

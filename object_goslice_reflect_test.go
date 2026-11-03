@@ -177,7 +177,7 @@ func TestGoSliceReflectProtoMethod(t *testing.T) {
 	}
 }
 
-type gosliceReflect_withMethods []interface{}
+type gosliceReflect_withMethods []any
 
 func (s gosliceReflect_withMethods) Method() bool {
 	return true
@@ -535,9 +535,9 @@ func TestGoSliceReflectNil(t *testing.T) {
 func BenchmarkGoSliceReflectSet(b *testing.B) {
 	vm := New()
 	a := vm.ToValue([]int{1}).(*Object)
-	b.ResetTimer()
+
 	v := intToValue(0)
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		a.Set("0", v)
 	}
 }

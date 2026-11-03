@@ -1698,7 +1698,6 @@ func (e *compiledFunctionLiteral) compile() (prg *Program, name unistring.String
 
 	strict = s.strict
 	prg = e.c.p
-	// e.c.p.dumpCode()
 	if enterFunc2Mark != -1 {
 		e.c.popScope()
 	}
@@ -1713,26 +1712,26 @@ func (e *compiledFunctionLiteral) emitGetter(putOnStack bool) {
 	switch e.typ {
 	case funcArrow:
 		if e.isAsync {
-			e.c.emit(&newAsyncArrowFunc{newArrowFunc: newArrowFunc{newFunc: newFunc{prg: p, length: length, name: name, source: e.source, strict: strict}}})
+			e.c.emit(&newAsyncArrowFunc{prg: p, length: length, name: name, source: e.source, strict: strict})
 		} else {
-			e.c.emit(&newArrowFunc{newFunc: newFunc{prg: p, length: length, name: name, source: e.source, strict: strict}})
+			e.c.emit(&newArrowFunc{prg: p, length: length, name: name, source: e.source, strict: strict})
 		}
 	case funcMethod, funcClsInit:
 		if e.isAsync {
-			e.c.emit(&newAsyncMethod{newMethod: newMethod{newFunc: newFunc{prg: p, length: length, name: name, source: e.source, strict: strict}, homeObjOffset: e.homeObjOffset}})
+			e.c.emit(&newAsyncMethod{prg: p, length: length, name: name, source: e.source, strict: strict, homeObjOffset: e.homeObjOffset})
 		} else {
 			if e.isGenerator {
-				e.c.emit(&newGeneratorMethod{newMethod: newMethod{newFunc: newFunc{prg: p, length: length, name: name, source: e.source, strict: strict}, homeObjOffset: e.homeObjOffset}})
+				e.c.emit(&newGeneratorMethod{prg: p, length: length, name: name, source: e.source, strict: strict, homeObjOffset: e.homeObjOffset})
 			} else {
-				e.c.emit(&newMethod{newFunc: newFunc{prg: p, length: length, name: name, source: e.source, strict: strict}, homeObjOffset: e.homeObjOffset})
+				e.c.emit(&newMethod{prg: p, length: length, name: name, source: e.source, strict: strict, homeObjOffset: e.homeObjOffset})
 			}
 		}
 	case funcRegular:
 		if e.isAsync {
-			e.c.emit(&newAsyncFunc{newFunc: newFunc{prg: p, length: length, name: name, source: e.source, strict: strict}})
+			e.c.emit(&newAsyncFunc{prg: p, length: length, name: name, source: e.source, strict: strict})
 		} else {
 			if e.isGenerator {
-				e.c.emit(&newGeneratorFunc{newFunc: newFunc{prg: p, length: length, name: name, source: e.source, strict: strict}})
+				e.c.emit(&newGeneratorFunc{prg: p, length: length, name: name, source: e.source, strict: strict})
 			} else {
 				e.c.emit(&newFunc{prg: p, length: length, name: name, source: e.source, strict: strict})
 			}
@@ -1893,10 +1892,8 @@ func (e *compiledClassLiteral) emitGetter(putOnStack bool) {
 		derived = true
 		superClass.emitGetter(true)
 		ndc := &newDerivedClass{
-			newClass: newClass{
-				name:   clsName,
-				source: e.source,
-			},
+			name:   clsName,
+			source: e.source,
 		}
 		e.addSrcMap()
 		e.c.emit(ndc)
@@ -2034,17 +2031,13 @@ func (e *compiledClassLiteral) emitGetter(putOnStack bool) {
 				switch elt.Kind {
 				case ast.PropertyKindGet:
 					e.c.emit(&definePrivateGetter{
-						definePrivateMethod: definePrivateMethod{
-							idx:          privateName.idx,
-							targetOffset: offset,
-						},
+						idx:          privateName.idx,
+						targetOffset: offset,
 					})
 				case ast.PropertyKindSet:
 					e.c.emit(&definePrivateSetter{
-						definePrivateMethod: definePrivateMethod{
-							idx:          privateName.idx,
-							targetOffset: offset,
-						},
+						idx:          privateName.idx,
+						targetOffset: offset,
 					})
 				default:
 					e.c.emit(&definePrivateMethod{
@@ -2352,11 +2345,9 @@ func (c *compiler) compileCallArgs(list []ast.Expression) (args []compiledExpr, 
 func (c *compiler) compileNewExpression(v *ast.NewExpression) compiledExpr {
 	args, isVariadic := c.compileCallArgs(v.ArgumentList)
 	r := &compiledNewExpr{
-		compiledCallExpr: compiledCallExpr{
-			callee:     c.compileExpression(v.Callee),
-			args:       args,
-			isVariadic: isVariadic,
-		},
+		callee:     c.compileExpression(v.Callee),
+		args:       args,
+		isVariadic: isVariadic,
 	}
 	r.init(c, v.Idx0())
 	return r

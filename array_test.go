@@ -22,7 +22,7 @@ func TestArrayExportProps(t *testing.T) {
 		t.Fatal(err)
 	}
 	actual := arr.Export()
-	expected := []interface{}{true}
+	expected := []any{true}
 	if !reflect.DeepEqual(actual, expected) {
 		t.Fatalf("Expected: %#v, actual: %#v", expected, actual)
 	}
@@ -42,39 +42,34 @@ func TestArrayCanonicalIndex(t *testing.T) {
 }
 
 func BenchmarkArrayGetStr(b *testing.B) {
-	b.StopTimer()
+
 	r := New()
 	v := &Object{runtime: r}
 
 	a := &arrayObject{
-		baseObject: baseObject{
-			val:        v,
-			extensible: true,
-		},
+		val:        v,
+		extensible: true,
 	}
 	v.self = a
 
 	a.init()
 
 	v.setOwn(valueInt(0), asciiString("test"), false)
-	b.StartTimer()
 
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		a.getStr("0", nil)
 	}
 
 }
 
 func BenchmarkArrayGet(b *testing.B) {
-	b.StopTimer()
+
 	r := New()
 	v := &Object{runtime: r}
 
 	a := &arrayObject{
-		baseObject: baseObject{
-			val:        v,
-			extensible: true,
-		},
+		val:        v,
+		extensible: true,
 	}
 	v.self = a
 
@@ -84,25 +79,21 @@ func BenchmarkArrayGet(b *testing.B) {
 
 	v.setOwn(idx, asciiString("test"), false)
 
-	b.StartTimer()
-
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		v.get(idx, nil)
 	}
 
 }
 
 func BenchmarkArrayPut(b *testing.B) {
-	b.StopTimer()
+
 	r := New()
 
 	v := &Object{runtime: r}
 
 	a := &arrayObject{
-		baseObject: baseObject{
-			val:        v,
-			extensible: true,
-		},
+		val:        v,
+		extensible: true,
 	}
 
 	v.self = a
@@ -112,9 +103,7 @@ func BenchmarkArrayPut(b *testing.B) {
 	var idx Value = valueInt(0)
 	var val Value = asciiString("test")
 
-	b.StartTimer()
-
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		v.setOwn(idx, val, false)
 	}
 
@@ -125,8 +114,8 @@ func BenchmarkArraySetEmpty(b *testing.B) {
 	_ = r.Get("Array").(*Object).Get("prototype").String() // materialise Array.prototype
 	a := r.NewArray(0, 0)
 	values := a.self.(*arrayObject).values
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+
+	for b.Loop() {
 		values[0] = nil
 		a.self.setOwnIdx(0, valueTrue, true)
 	}

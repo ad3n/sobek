@@ -112,7 +112,7 @@ func TestForAwaitOfBasic(t *testing.T) {
 
 func TestForAwaitOfHostIterator(t *testing.T) {
 	r := New()
-	var resolvers []func(interface{}) error
+	var resolvers []func(any) error
 	r.Set("hostNext", func(call FunctionCall) Value {
 		p, resolve, _ := r.NewPromise()
 		resolvers = append(resolvers, resolve)
@@ -138,7 +138,7 @@ func TestForAwaitOfHostIterator(t *testing.T) {
 		if len(resolvers) != i+1 {
 			t.Fatalf("next() called %d times, expected %d", len(resolvers), i+1)
 		}
-		if err := resolvers[i](map[string]interface{}{"value": chunk, "done": false}); err != nil {
+		if err := resolvers[i](map[string]any{"value": chunk, "done": false}); err != nil {
 			t.Fatal(err)
 		}
 		if _, err := r.RunString(""); err != nil {
@@ -148,7 +148,7 @@ func TestForAwaitOfHostIterator(t *testing.T) {
 			t.Fatalf("state: %s", s)
 		}
 	}
-	if err := resolvers[3](map[string]interface{}{"done": true}); err != nil {
+	if err := resolvers[3](map[string]any{"done": true}); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := r.RunString(""); err != nil {

@@ -158,7 +158,7 @@ func (s *concatString) baseObject(r *Runtime) *Object {
 	return ss.val
 }
 
-func (s *concatString) Export() interface{} {
+func (s *concatString) Export() any {
 	return s.String()
 }
 

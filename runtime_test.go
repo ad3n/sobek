@@ -960,7 +960,7 @@ func ExampleRuntime_ExportTo_funcVariadic() {
 		panic(err)
 	}
 
-	var fn func(args ...interface{}) string
+	var fn func(args ...any) string
 	err = vm.ExportTo(vm.Get("f"), &fn)
 	if err != nil {
 		panic(err)
@@ -1243,19 +1243,19 @@ func TestToValueNil(t *testing.T) {
 		t.Fatalf("struct ptr: %v", v)
 	}
 
-	var m map[string]interface{}
+	var m map[string]any
 	if v := vm.ToValue(m); !IsNull(v) {
-		t.Fatalf("map[string]interface{}: %v", v)
+		t.Fatalf("map[string]any: %v", v)
 	}
 
-	var ar []interface{}
+	var ar []any
 	if v := vm.ToValue(ar); IsNull(v) {
-		t.Fatalf("[]interface{}: %v", v)
+		t.Fatalf("[]any: %v", v)
 	}
 
-	var arptr *[]interface{}
+	var arptr *[]any
 	if v := vm.ToValue(arptr); !IsNull(v) {
-		t.Fatalf("*[]interface{}: %v", v)
+		t.Fatalf("*[]any: %v", v)
 	}
 }
 
@@ -1275,7 +1275,7 @@ func TestToValueFloat(t *testing.T) {
 
 func TestToValueInterface(t *testing.T) {
 
-	f := func(i interface{}) bool {
+	f := func(i any) bool {
 		return i == t
 	}
 	vm := New()
@@ -1337,7 +1337,7 @@ func TestJSONNil(t *testing.T) {
 	`
 
 	vm := New()
-	var i interface{}
+	var i any
 	vm.Set("i", i)
 	ret, err := vm.RunString(SCRIPT)
 	if err != nil {
@@ -1351,7 +1351,7 @@ func TestJSONNil(t *testing.T) {
 
 type customJsonEncodable struct{}
 
-func (*customJsonEncodable) JsonEncodable() interface{} {
+func (*customJsonEncodable) JsonEncodable() any {
 	return "Test"
 }
 
@@ -1751,8 +1751,8 @@ func TestInterruptInWrappedFunction2(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error but got no error")
 	}
-	intErr := new(InterruptedError)
-	if !errors.As(err, &intErr) {
+	intErr, ok := errors.AsType[*InterruptedError](err)
+	if !ok {
 		t.Fatalf("Wrong error type: %T", err)
 	}
 	if !strings.Contains(intErr.Error(), "here is the error") {
@@ -1782,8 +1782,7 @@ func TestInterruptInWrappedFunction2Recover(t *testing.T) {
 	rt.Set("s", rt.ToValue(func(a Callable) (Value, error) {
 		v, err := a(nil)
 		if err != nil {
-			intErr := new(InterruptedError)
-			if errors.As(err, &intErr) {
+			if _, ok := errors.AsType[*InterruptedError](err); ok {
 				rt.ClearInterrupt()
 				return nil, errors.New("oops we got interrupted let's not that")
 			}
@@ -1846,8 +1845,8 @@ func TestInterruptInWrappedFunctionExpectInteruptError(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error but got no error")
 	}
-	var intErr *InterruptedError
-	if !errors.As(err, &intErr) {
+	intErr, ok := errors.AsType[*InterruptedError](err)
+	if !ok {
 		t.Fatalf("Wrong error type: %T", err)
 	}
 	if !strings.Contains(intErr.Error(), "here is the error") {
@@ -1880,8 +1879,7 @@ func TestInterruptInWrappedFunctionExpectStackOverflowError(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error but got no error")
 	}
-	var soErr *StackOverflowError
-	if !errors.As(err, &soErr) {
+	if _, ok := errors.AsType[*StackOverflowError](err); !ok {
 		t.Fatalf("Wrong error type: %T", err)
 	}
 }
@@ -1917,8 +1915,7 @@ func TestInterruptWithPromises(t *testing.T) {
 		t.Fatal("expected error but got no error")
 	}
 	t.Log(err)
-	var soErr *InterruptedError
-	if !errors.As(err, &soErr) {
+	if _, ok := errors.AsType[*InterruptedError](err); !ok {
 		t.Fatalf("Wrong error type: %T", err)
 	}
 }
@@ -2839,7 +2836,7 @@ func TestPromiseExport(t *testing.T) {
 	vm := New()
 	p, _, _ := vm.NewPromise()
 	pv := vm.ToValue(p)
-	if actual := pv.ExportType(); actual != reflect.TypeOf((*Promise)(nil)) {
+	if actual := pv.ExportType(); actual != reflect.TypeFor[*Promise]() {
 		t.Fatalf("Export type: %v", actual)
 	}
 
@@ -3817,8 +3814,7 @@ func BenchmarkCallReflect(b *testing.B) {
 
 	prg := MustCompile("test.js", "f(null)", true)
 
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		vm.RunProgram(prg)
 	}
 }
@@ -3831,8 +3827,7 @@ func BenchmarkCallNative(b *testing.B) {
 
 	prg := MustCompile("test.js", "f(null)", true)
 
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		vm.RunProgram(prg)
 	}
 }
@@ -3851,8 +3846,7 @@ func BenchmarkCallJS(b *testing.B) {
 
 	prg := MustCompile("test.js", "f(null)", true)
 
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		vm.RunProgram(prg)
 	}
 }
@@ -3867,19 +3861,18 @@ func BenchmarkMainLoop(b *testing.B) {
 
 	prg := MustCompile("test.js", SCRIPT, true)
 
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		vm.RunProgram(prg)
 	}
 }
 
 func BenchmarkStringMapGet(b *testing.B) {
 	m := make(map[string]Value)
-	for i := 0; i < 100; i++ {
+	for i := range 100 {
 		m[strconv.Itoa(i)] = intToValue(int64(i))
 	}
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+
+	for b.Loop() {
 		if m["50"] == nil {
 			b.Fatal()
 		}
@@ -3888,12 +3881,12 @@ func BenchmarkStringMapGet(b *testing.B) {
 
 func BenchmarkValueStringMapGet(b *testing.B) {
 	m := make(map[String]Value)
-	for i := 0; i < 100; i++ {
+	for i := range 100 {
 		m[asciiString(strconv.Itoa(i))] = intToValue(int64(i))
 	}
-	b.ResetTimer()
+
 	var key String = asciiString("50")
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		if m[key] == nil {
 			b.Fatal()
 		}
@@ -3902,12 +3895,12 @@ func BenchmarkValueStringMapGet(b *testing.B) {
 
 func BenchmarkAsciiStringMapGet(b *testing.B) {
 	m := make(map[asciiString]Value)
-	for i := 0; i < 100; i++ {
+	for i := range 100 {
 		m[asciiString(strconv.Itoa(i))] = intToValue(int64(i))
 	}
-	b.ResetTimer()
+
 	var key = asciiString("50")
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		if m[key] == nil {
 			b.Fatal()
 		}
@@ -3953,7 +3946,7 @@ func BenchmarkToInt32Float(b *testing.B) {
 
 func BenchmarkNew(b *testing.B) {
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		New()
 	}
 }

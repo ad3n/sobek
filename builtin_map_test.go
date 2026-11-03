@@ -64,7 +64,7 @@ func TestMapEvilIterator(t *testing.T) {
 
 func TestMapExportToNilMap(t *testing.T) {
 	vm := New()
-	var m map[int]interface{}
+	var m map[int]any
 	res, err := vm.RunString("new Map([[1, true]])")
 	if err != nil {
 		t.Fatal(err)
@@ -83,7 +83,7 @@ func TestMapExportToNilMap(t *testing.T) {
 
 func TestMapExportToNonNilMap(t *testing.T) {
 	vm := New()
-	m := map[int]interface{}{
+	m := map[int]any{
 		2: true,
 	}
 	res, err := vm.RunString("new Map([[1, true]])")
@@ -178,7 +178,7 @@ func ExampleRuntime_ExportTo_mapToSlice() {
 	if err != nil {
 		panic(err)
 	}
-	exp := make([][]interface{}, 0)
+	exp := make([][]any, 0)
 	err = vm.ExportTo(m, &exp)
 	if err != nil {
 		panic(err)
@@ -195,7 +195,7 @@ func ExampleRuntime_ExportTo_mapToTypedSlice() {
 	if err != nil {
 		panic(err)
 	}
-	exp := make([][2]interface{}, 0)
+	exp := make([][2]any, 0)
 	err = vm.ExportTo(m, &exp)
 	if err != nil {
 		panic(err)
@@ -209,7 +209,7 @@ func BenchmarkMapDelete(b *testing.B) {
 	var key2 Value = asciiString("b")
 	one := intToValue(1)
 	two := intToValue(2)
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		m := newOrderedMap(&maphash.Hash{})
 		m.set(key1, one)
 		m.set(key2, two)
@@ -233,8 +233,8 @@ func BenchmarkMapDeleteJS(b *testing.B) {
 	if err != nil {
 		b.Fatal(err)
 	}
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+
+	for b.Loop() {
 		vm := New()
 		_, err := vm.RunProgram(prg)
 		if err != nil {

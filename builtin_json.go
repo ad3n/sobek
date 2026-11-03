@@ -9,6 +9,7 @@ import (
 	"math"
 	"strconv"
 	"strings"
+	"sync"
 	"unicode/utf16"
 	"unicode/utf8"
 
@@ -16,6 +17,23 @@ import (
 )
 
 const hex = "0123456789abcdef"
+
+var jsonTemplate *objectTemplate
+var jsonTemplateOnce sync.Once
+
+func getJSONTemplate() *objectTemplate {
+	jsonTemplateOnce.Do(func() {
+		t := newObjectTemplate()
+		t.protoFactory = func(r *Runtime) *Object { return r.global.ObjectPrototype }
+		t.putStr("parse", func(r *Runtime) Value { return r.methodProp(r.builtinJSON_parse, "parse", 2) })
+		t.putStr("stringify", func(r *Runtime) Value { return r.methodProp(r.builtinJSON_stringify, "stringify", 3) })
+		t.putStr("rawJSON", func(r *Runtime) Value { return r.methodProp(r.builtinJSON_rawJSON, "rawJSON", 1) })
+		t.putStr("isRawJSON", func(r *Runtime) Value { return r.methodProp(r.builtinJSON_isRawJSON, "isRawJSON", 1) })
+		t.putSym(SymToStringTag, func(*Runtime) Value { return valueProp(asciiString(classJSON), false, false, true) })
+		jsonTemplate = t
+	})
+	return jsonTemplate
+}
 
 func (r *Runtime) builtinJSON_parse(call FunctionCall) Value {
 	d := json.NewDecoder(strings.NewReader(call.Argument(0).toString().String()))
@@ -143,7 +161,7 @@ func (r *Runtime) builtinJSON_reviveWalk(reviver func(FunctionCall) Value, holde
 	if object, ok := value.(*Object); ok {
 		if isArray(object) {
 			length := toLength(object.self.getStr("length", nil))
-			for index := int64(0); index < length; index++ {
+			for index := range length {
 				name := asciiString(strconv.FormatInt(index, 10))
 				value := r.builtinJSON_reviveWalk(reviver, object, name)
 				if value == _undefined {
@@ -413,7 +431,7 @@ func (ctx *_builtinJSON_stringifyContext) ja(array *Object) {
 		separator = ","
 	}
 
-	for i := int64(0); i < length; i++ {
+	for i := range length {
 		if !ctx.str(asciiString(strconv.FormatInt(i, 10)), array) {
 			ctx.buf.WriteString("null")
 		}
@@ -579,16 +597,9 @@ func (r *Runtime) builtinJSON_isRawJSON(call FunctionCall) Value {
 }
 
 func (r *Runtime) getJSON() *Object {
-	ret := r.global.JSON
-	if ret == nil {
-		JSON := r.newBaseObject(r.global.ObjectPrototype, classObject)
-		ret = JSON.val
-		r.global.JSON = ret
-		JSON._putProp("parse", r.newNativeFunc(r.builtinJSON_parse, "parse", 2), true, false, true)
-		JSON._putProp("stringify", r.newNativeFunc(r.builtinJSON_stringify, "stringify", 3), true, false, true)
-		JSON._putProp("rawJSON", r.newNativeFunc(r.builtinJSON_rawJSON, "rawJSON", 1), true, false, true)
-		JSON._putProp("isRawJSON", r.newNativeFunc(r.builtinJSON_isRawJSON, "isRawJSON", 1), true, false, true)
-		JSON._putSym(SymToStringTag, valueProp(asciiString(classJSON), false, false, true))
+	if r.global.JSON == nil {
+		r.global.JSON = r.newTemplatedObject(getJSONTemplate(), nil).val
 	}
-	return ret
+
+	return r.global.JSON
 }

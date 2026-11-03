@@ -11,17 +11,15 @@ import (
 
 type objectGoSlice struct {
 	baseObject
-	data       *[]interface{}
+	data       *[]any
 	lengthProp valueProperty
 	origIsPtr  bool
 }
 
-func (r *Runtime) newObjectGoSlice(data *[]interface{}, isPtr bool) *objectGoSlice {
+func (r *Runtime) newObjectGoSlice(data *[]any, isPtr bool) *objectGoSlice {
 	obj := &Object{runtime: r}
 	a := &objectGoSlice{
-		baseObject: baseObject{
-			val: obj,
-		},
+		val:       obj,
 		data:      data,
 		origIsPtr: isPtr,
 	}
@@ -111,7 +109,7 @@ func (o *objectGoSlice) getOwnPropIdx(idx valueInt) Value {
 func (o *objectGoSlice) grow(size int) {
 	oldcap := cap(*o.data)
 	if oldcap < size {
-		n := make([]interface{}, size, growCap(size, len(*o.data), oldcap))
+		n := make([]any, size, growCap(size, len(*o.data), oldcap))
 		copy(n, *o.data)
 		*o.data = n
 	} else {
@@ -303,7 +301,7 @@ func (o *objectGoSlice) stringKeys(_ bool, accum []Value) []Value {
 	return accum
 }
 
-func (o *objectGoSlice) export(*objectExportCtx) interface{} {
+func (o *objectGoSlice) export(*objectExportCtx) any {
 	if o.origIsPtr {
 		return o.data
 	}
@@ -333,7 +331,7 @@ func (o *objectGoSlice) reflectValue() reflect.Value {
 }
 
 func (o *objectGoSlice) setReflectValue(value reflect.Value) {
-	o.data = value.Addr().Interface().(*[]interface{})
+	o.data = value.Addr().Interface().(*[]any)
 }
 
 func (o *objectGoSlice) sortLen() int {

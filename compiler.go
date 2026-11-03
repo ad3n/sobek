@@ -2,6 +2,7 @@ package sobek
 
 import (
 	"fmt"
+	"slices"
 	"sort"
 
 	"github.com/grafana/sobek/ast"
@@ -74,7 +75,7 @@ type Program struct {
 	src      *file.File
 	srcMap   []srcMapItem
 
-	scriptOrModule interface{}
+	scriptOrModule any
 }
 
 type compiler struct {
@@ -97,7 +98,7 @@ type compiler struct {
 	stringCache map[unistring.String]Value
 }
 
-func (c *compiler) getScriptOrModule() interface{} {
+func (c *compiler) getScriptOrModule() any {
 	if c.module != nil {
 		return c.module
 	}
@@ -440,44 +441,6 @@ func newCompiler() *compiler {
 	c.enumGetExpr.init(c, file.Idx(0))
 
 	return c
-}
-
-func (p *Program) dumpCode(logger func(format string, args ...interface{})) {
-	p._dumpCode("", logger)
-}
-
-func (p *Program) _dumpCode(indent string, logger func(format string, args ...interface{})) {
-	dumpInitFields := func(initFields *Program) {
-		i := indent + ">"
-		logger("%s ---- init_fields:", i)
-		initFields._dumpCode(i, logger)
-		logger("%s ----", i)
-	}
-	for pc, ins := range p.code {
-		logger("%s %d: %T(%v)", indent, pc, ins, ins)
-		var prg *Program
-		switch f := ins.(type) {
-		case newFuncInstruction:
-			prg = f.getPrg()
-		case *newDerivedClass:
-			if f.initFields != nil {
-				dumpInitFields(f.initFields)
-			}
-			prg = f.ctor
-		case *newClass:
-			if f.initFields != nil {
-				dumpInitFields(f.initFields)
-			}
-			prg = f.ctor
-		case *newStaticFieldInit:
-			if f.initFields != nil {
-				dumpInitFields(f.initFields)
-			}
-		}
-		if prg != nil {
-			prg._dumpCode(indent+">", logger)
-		}
-	}
 }
 
 func (p *Program) sourceOffset(pc int) int {
@@ -1045,15 +1008,11 @@ func (c *compiler) compileModule(module *SourceTextModuleRecord) {
 	scope.finaliseVarAlloc(0)
 	m := &newModule{
 		moduleCore: module,
-		newAsyncFunc: newAsyncFunc{
-			newFunc: newFunc{
-				prg:    c.p,
-				name:   unistring.String(in.File.Name()),
-				source: in.File.Source(),
-				length: 0,
-				strict: true,
-			},
-		},
+		prg:        c.p,
+		name:       unistring.String(in.File.Name()),
+		source:     in.File.Source(),
+		length:     0,
+		strict:     true,
 	}
 	c.p = &Program{
 		src:            in.File,
@@ -1331,8 +1290,8 @@ func (c *compiler) compileFunctionsGlobalAllUnique(list []*ast.FunctionDeclarati
 
 func (c *compiler) compileFunctionsGlobal(list []*ast.FunctionDeclaration) {
 	m := make(map[unistring.String]int, len(list))
-	for i := len(list) - 1; i >= 0; i-- {
-		name := list[i].Function.Name.Name
+	for i, l := range slices.Backward(list) {
+		name := l.Function.Name.Name
 		if _, exists := m[name]; !exists {
 			m[name] = i
 		}
@@ -1550,21 +1509,17 @@ func (c *compiler) emit(instructions ...instruction) {
 
 func (c *compiler) throwSyntaxError(offset int, msg string) {
 	panic(&CompilerSyntaxError{
-		CompilerError: CompilerError{
-			File:    c.p.src,
-			Offset:  offset,
-			Message: msg,
-		},
+		File:    c.p.src,
+		Offset:  offset,
+		Message: msg,
 	})
 }
 
-func (c *compiler) throwSyntaxErrorf(offset int, format string, args ...interface{}) {
+func (c *compiler) throwSyntaxErrorf(offset int, format string, args ...any) {
 	panic(&CompilerSyntaxError{
-		CompilerError: CompilerError{
-			File:    c.p.src,
-			Offset:  offset,
-			Message: fmt.Sprintf(format, args...),
-		},
+		File:    c.p.src,
+		Offset:  offset,
+		Message: fmt.Sprintf(format, args...),
 	})
 }
 
@@ -1638,7 +1593,7 @@ func (c *compiler) compileStatementDummy(statement ast.Statement) {
 	leave()
 }
 
-func (c *compiler) assert(cond bool, offset int, msg string, args ...interface{}) {
+func (c *compiler) assert(cond bool, offset int, msg string, args ...any) {
 	if !cond {
 		c.throwSyntaxErrorf(offset, "Compiler bug: "+msg, args...)
 	}

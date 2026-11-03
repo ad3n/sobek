@@ -41,7 +41,7 @@ func tt(t *testing.T, f func()) {
 	f()
 }
 
-func is(a, b interface{}) {
+func is(a, b any) {
 	if !reflect.DeepEqual(a, b) {
 		panic(fmt.Errorf("%+v(%T) != %+v(%T)", a, a, b, b))
 	}

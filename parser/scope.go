@@ -1,6 +1,8 @@
 package parser
 
 import (
+	"slices"
+
 	"github.com/grafana/sobek/ast"
 	"github.com/grafana/sobek/unistring"
 )
@@ -41,10 +43,8 @@ func (self *_scope) declare(declaration *ast.VariableDeclaration) {
 }
 
 func (self *_scope) hasLabel(name unistring.String) bool {
-	for _, label := range self.labels {
-		if label == name {
-			return true
-		}
+	if slices.Contains(self.labels, name) {
+		return true
 	}
 	if self.outer != nil && !self.inFunction {
 		// Crossing a function boundary to look for a label is verboten

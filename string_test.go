@@ -20,7 +20,7 @@ func TestStringOOBProperties(t *testing.T) {
 func TestImportedString(t *testing.T) {
 	vm := New()
 
-	testUnaryOp := func(a, expr string, result interface{}, t *testing.T) {
+	testUnaryOp := func(a, expr string, result any, t *testing.T) {
 		v, err := vm.RunString("a => " + expr)
 		if err != nil {
 			t.Fatal(err)
@@ -41,7 +41,7 @@ func TestImportedString(t *testing.T) {
 		}
 	}
 
-	testBinaryOp := func(a, b, expr string, result interface{}, t *testing.T) {
+	testBinaryOp := func(a, b, expr string, result any, t *testing.T) {
 		v, err := vm.RunString("(a, b) => " + expr)
 		if err != nil {
 			t.Fatal(err)
@@ -430,9 +430,8 @@ func TestUnicodeStringToIntegerAndFloat(t *testing.T) {
 func BenchmarkASCIIConcat(b *testing.B) {
 	vm := New()
 
-	b.ResetTimer()
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		_, err := vm.RunString(`{let result = "ab";
 		for (let i = 0 ; i < 10;i++) {
 			result += result;
@@ -477,13 +476,13 @@ func BenchmarkCase(b *testing.B) {
 	for _, bm := range benchmarks {
 		b.Run("ToLower/"+bm.name, func(b *testing.B) {
 			b.ReportAllocs()
-			for i := 0; i < b.N; i++ {
+			for b.Loop() {
 				_ = bm.s.toLower()
 			}
 		})
 		b.Run("ToUpper/"+bm.name, func(b *testing.B) {
 			b.ReportAllocs()
-			for i := 0; i < b.N; i++ {
+			for b.Loop() {
 				_ = bm.s.toUpper()
 			}
 		})

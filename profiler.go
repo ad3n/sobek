@@ -3,6 +3,7 @@ package sobek
 import (
 	"errors"
 	"io"
+	"slices"
 	"strconv"
 	"sync"
 	"sync/atomic"
@@ -64,8 +65,8 @@ type profBuffer struct {
 func (pb *profBuffer) addSample(pt *profTracker) {
 	sampleFrames := pt.frames[:pt.numFrames]
 	n := &pb.root
-	for j := len(sampleFrames) - 1; j >= 0; j-- {
-		frame := sampleFrames[j]
+	for _, frame := range slices.Backward(sampleFrames) {
+
 		if frame.prg == nil {
 			continue
 		}

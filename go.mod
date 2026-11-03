@@ -1,10 +1,10 @@
 module github.com/grafana/sobek
 
-go 1.26.0
+go 1.27.3
 
 require (
 	github.com/Masterminds/semver/v3 v3.5.0
-	github.com/dlclark/regexp2/v2 v2.11.0
+	github.com/ad3n/regexp2/v2 v2.0.0
 	github.com/go-sourcemap/sourcemap v2.1.4+incompatible
 	github.com/goccy/go-yaml v1.19.2
 	github.com/google/pprof v0.0.0-20230207041349-798e818bf904
