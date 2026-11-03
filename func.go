@@ -25,6 +25,8 @@ type yieldMarker struct {
 }
 
 var (
+	initialFuncPropNames = [...]unistring.String{"length", "name", copyMarker}
+
 	await = &yieldMarker{resultType: resultAwait}
 
 	yield            = &yieldMarker{resultType: resultYield}
@@ -520,13 +522,13 @@ func (f *arrowFuncObject) export(*objectExportCtx) any {
 }
 
 func (f *baseFuncObject) init(name unistring.String, length Value) {
-	f.baseObject.init()
-
 	f.lenProp.configurable = true
 	f.lenProp.value = length
-	f._put("length", &f.lenProp)
-
-	f._putProp("name", stringValueFromRaw(name), false, false, true)
+	f.propNames = initialFuncPropNames[:2]
+	f.values = map[unistring.String]Value{
+		"length": &f.lenProp,
+		"name":   valueProp(stringValueFromRaw(name), false, false, true),
+	}
 }
 
 func hasInstance(val *Object, v Value) bool {

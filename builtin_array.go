@@ -146,7 +146,6 @@ func (r *Runtime) arrayproto_pop(call FunctionCall) Value {
 				// optimisation bail-out
 				return r.arrayproto_pop_generic(obj)
 			}
-			//a._setLengthInt(l, false)
 			a.values[l] = nil
 			a.values = a.values[:l]
 		} else {

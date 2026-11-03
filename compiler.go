@@ -1007,12 +1007,11 @@ func (c *compiler) compileModule(module *SourceTextModuleRecord) {
 
 	scope.finaliseVarAlloc(0)
 	m := &newModule{
-		moduleCore: module,
-		prg:        c.p,
-		name:       unistring.String(in.File.Name()),
-		source:     in.File.Source(),
-		length:     0,
-		strict:     true,
+		prg:    c.p,
+		name:   unistring.String(in.File.Name()),
+		source: in.File.Source(),
+		length: 0,
+		strict: true,
 	}
 	c.p = &Program{
 		src:            in.File,

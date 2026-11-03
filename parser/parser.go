@@ -112,8 +112,6 @@ type _parser struct {
 
 	depth int
 
-	mode Mode
-
 	chr            rune                  // The current character
 	sloppyLiteral  bool                  // The string literal token has a legacy octal or \8, \9 escape sequence
 	numLiteralKind ast.NumberLiteralKind // The lexical form of the current numeric literal token, if any
@@ -172,7 +170,7 @@ func ReadSource(filename string, src any) ([]byte, error) {
 //
 //	// Parse some JavaScript, yielding a *ast.Program and/or an ErrorList
 //	program, err := parser.ParseFile(nil, "", `if (abc > 1) {}`, 0)
-func ParseFile(fileSet *file.FileSet, filename string, src any, mode Mode, options ...Option) (*ast.Program, error) {
+func ParseFile(fileSet *file.FileSet, filename string, src any, _ Mode, options ...Option) (*ast.Program, error) {
 	str, err := ReadSource(filename, src)
 	if err != nil {
 		return nil, err
@@ -186,7 +184,6 @@ func ParseFile(fileSet *file.FileSet, filename string, src any, mode Mode, optio
 		}
 
 		parser := _newParser(filename, str, base, options...)
-		parser.mode = mode
 		return parser.parse()
 	}
 }
@@ -220,14 +217,13 @@ func (self *_parser) slice(idx0, idx1 file.Idx) string {
 func (self *_parser) parse() (*ast.Program, error) {
 	self.openScope()
 	defer self.closeScope()
+
 	self.next()
 	if self.opts.module {
 		self.scope.allowAwait = true
 	}
+
 	program := self.parseProgram()
-	if false {
-		self.errors.Sort()
-	}
 	return program, self.errors.Err()
 }
 

@@ -1,7 +1,6 @@
 package parser
 
 import (
-	"bytes"
 	"encoding/json"
 	"reflect"
 	"strings"
@@ -185,14 +184,6 @@ func testMarshalNode(node any) any {
 	return nil
 }
 
-func testMarshal(node any) string {
-	value, err := json.Marshal(testMarshalNode(node))
-	if err != nil {
-		panic(err)
-	}
-	return string(value)
-}
-
 func TestParserAST(t *testing.T) {
 	tt(t, func() {
 
@@ -202,11 +193,13 @@ func TestParserAST(t *testing.T) {
 			wantOutput := strings.TrimSpace(inputOutput[match[1]:])
 			_, program, err := testParse(input)
 			is(err, nil)
-			haveOutput := testMarshal(program)
-			tmp0, tmp1 := bytes.Buffer{}, bytes.Buffer{}
-			json.Indent(&tmp0, []byte(haveOutput), "\t\t", "   ")
-			json.Indent(&tmp1, []byte(wantOutput), "\t\t", "   ")
-			is("\n\t\t"+tmp0.String(), "\n\t\t"+tmp1.String())
+			output, err := json.Marshal(testMarshalNode(program))
+			is(err, nil)
+
+			var have, want any
+			is(json.Unmarshal(output, &have), nil)
+			is(json.Unmarshal([]byte(wantOutput), &want), nil)
+			is(have, want)
 		}
 
 		test(`

@@ -211,7 +211,6 @@ type compiledDynamicImport struct {
 }
 
 func (c *compiler) compileExpression(v ast.Expression) compiledExpr {
-	// log.Printf("compileExpression: %T", v)
 	switch v := v.(type) {
 	case nil:
 		return nil
@@ -252,7 +251,7 @@ func (c *compiler) compileExpression(v ast.Expression) compiledExpr {
 	case *ast.ArrowFunctionLiteral:
 		return c.compileArrowFunctionLiteral(v)
 	case *ast.ClassLiteral:
-		return c.compileClassLiteral(v, true)
+		return c.compileClassLiteral(v)
 	case *ast.DotExpression:
 		return c.compileDotExpression(v)
 	case *ast.PrivateDotExpression:
@@ -1777,7 +1776,6 @@ type compiledClassLiteral struct {
 	lhsName unistring.String
 	source  string
 	body    []ast.ClassElement
-	isExpr  bool
 }
 
 func (c *compiler) processKey(expr ast.Expression) (val unistring.String, computed bool) {
@@ -2222,7 +2220,7 @@ func (e *compiledClassLiteral) compileFieldsAndStaticBlocks(elements []clsElemen
 	return res
 }
 
-func (c *compiler) compileClassLiteral(v *ast.ClassLiteral, isExpr bool) *compiledClassLiteral {
+func (c *compiler) compileClassLiteral(v *ast.ClassLiteral) *compiledClassLiteral {
 	if v.Name != nil {
 		c.checkIdentifierLName(v.Name.Name, int(v.Name.Idx)-1)
 	}
@@ -2231,7 +2229,6 @@ func (c *compiler) compileClassLiteral(v *ast.ClassLiteral, isExpr bool) *compil
 		superClass: c.compileExpression(v.SuperClass),
 		body:       v.Body,
 		source:     v.Source,
-		isExpr:     isExpr,
 	}
 	r.init(c, v.Idx0())
 	return r

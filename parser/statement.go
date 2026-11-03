@@ -6,11 +6,11 @@ import (
 	"os"
 	"strings"
 
-	"github.com/go-sourcemap/sourcemap"
 	"github.com/ad3n/sobek/ast"
 	"github.com/ad3n/sobek/file"
 	"github.com/ad3n/sobek/token"
 	"github.com/ad3n/sobek/unistring"
+	"github.com/go-sourcemap/sourcemap"
 )
 
 func (self *_parser) parseBlockStatement() *ast.BlockStatement {
@@ -140,7 +140,6 @@ func (self *_parser) parseStatement() ast.Statement {
 	}
 
 	expression := self.parseExpression()
-	// spew.Dump(expression)
 
 	if identifier, isIdentifier := expression.(*ast.Identifier); isIdentifier && self.token == token.COLON {
 		// LabelledStatement

@@ -431,7 +431,6 @@ func (n valueNull) ToBoolean() bool {
 func (n valueNull) ToObject(r *Runtime) *Object {
 	r.typeErrorResult(true, "Cannot convert undefined or null to object")
 	return nil
-	//return r.newObject()
 }
 
 func (n valueNull) ToNumber() Value {

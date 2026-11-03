@@ -7,6 +7,22 @@ import (
 	"testing"
 )
 
+func TestFunctionPropertyNamesIsolation(t *testing.T) {
+	testScript(`
+		const first = x => x, second = x => x;
+		const keys = f => Object.getOwnPropertyNames(f).join(",");
+		const expected = "length,name";
+		for (const _ in first) {}
+		delete first.length;
+		first[0] = 1;
+		first.extra = 2;
+		Object.defineProperty(JSON.parse, "extra", { value: 3 });
+		delete JSON.parse.name;
+		keys(first) === "0,name,extra" && keys(second) === expected &&
+			keys(JSON.parse) === "length,extra" && keys(JSON.stringify) === expected;
+	`, valueTrue, t)
+}
+
 func TestFuncProto(t *testing.T) {
 	const SCRIPT = `
 	"use strict";
@@ -903,4 +919,14 @@ func TestGeneratorReturn8(t *testing.T) {
 	assert.sameValue(afterYield, 1, "code after yield executed");
 	`
 	testScriptWithTestLib(SCRIPT, _undefined, t)
+}
+
+func TestComputedSetterEnumerability(t *testing.T) {
+	testScript(`
+		const key = "field";
+		class C { set [key](v) {} }
+		const o = { set [key](v) {} };
+		!Object.getOwnPropertyDescriptor(C.prototype, key).enumerable &&
+			Object.getOwnPropertyDescriptor(o, key).enumerable;
+	`, valueTrue, t)
 }

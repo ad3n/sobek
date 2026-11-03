@@ -834,7 +834,7 @@ func (c *compiler) compileExportDeclaration(expr *ast.ExportDeclaration) {
 		cls := expr.ClassDeclaration
 		if expr.IsDefault {
 			if cls.Class.Name == nil {
-				c.emitLexicalAssign("default", int(cls.Class.Class)-1, c.compileClassLiteral(cls.Class, false))
+				c.emitLexicalAssign("default", int(cls.Class.Class)-1, c.compileClassLiteral(cls.Class))
 				return
 			}
 			c.compileClassDeclaration(cls)
@@ -1334,5 +1334,5 @@ func (c *compiler) compileSwitchStatement(v *ast.SwitchStatement, needResult boo
 }
 
 func (c *compiler) compileClassDeclaration(v *ast.ClassDeclaration) {
-	c.emitLexicalAssign(v.Class.Name.Name, int(v.Class.Class)-1, c.compileClassLiteral(v.Class, false))
+	c.emitLexicalAssign(v.Class.Name.Name, int(v.Class.Class)-1, c.compileClassLiteral(v.Class))
 }

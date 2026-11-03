@@ -665,7 +665,6 @@ func (module *SourceTextModuleRecord) ResolveExport(exportName string, resolvese
 }
 
 func (module *SourceTextModuleRecord) Instantiate(rt *Runtime) (CyclicModuleInstance, error) {
-	// fmt.Println("Instantiate", module.p.src.Name())
 	mi := &SourceTextModuleInstance{
 		moduleRecord:  module,
 		exportGetters: make(map[string]func() Value),

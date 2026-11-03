@@ -261,7 +261,6 @@ func (s *stringObject) defineOwnPropertyIdx(idx valueInt, descr PropertyDescript
 }
 
 type stringPropIter struct {
-	str         String // separate, because obj can be the singleton
 	obj         *stringObject
 	idx, length int
 }
@@ -278,7 +277,6 @@ func (i *stringPropIter) next() (propIterItem, iterNextFunc) {
 
 func (s *stringObject) iterateStringKeys() iterNextFunc {
 	return (&stringPropIter{
-		str:    s.value,
 		obj:    s,
 		length: s.length,
 	}).next

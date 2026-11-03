@@ -1286,7 +1286,7 @@ func (i *objectPropIter) next() (propIterItem, iterNextFunc) {
 	return propIterItem{}, nil
 }
 
-var copyMarker = unistring.String(" ")
+const copyMarker = unistring.String(" ")
 
 // Set a copy-on-write flag so that any subsequent modifications of anything below the current length
 // trigger a copy.
@@ -1873,7 +1873,7 @@ type privateId struct {
 }
 
 type privateEnvType struct {
-	numFields, numMethods uint32
+	numFields uint32
 }
 
 type privateNames map[unistring.String]*privateId

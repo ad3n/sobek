@@ -19,7 +19,6 @@ var (
 )
 
 type proxyPropIter struct {
-	p     *proxyObject
 	names []Value
 	idx   int
 }
@@ -872,21 +871,18 @@ func (p *proxyObject) proxyOwnKeys() ([]Value, bool) {
 
 func (p *proxyObject) iterateStringKeys() iterNextFunc {
 	return (&proxyPropIter{
-		p:     p,
 		names: p.stringKeys(true, nil),
 	}).next
 }
 
 func (p *proxyObject) iterateSymbols() iterNextFunc {
 	return (&proxyPropIter{
-		p:     p,
 		names: p.symbols(true, nil),
 	}).next
 }
 
 func (p *proxyObject) iterateKeys() iterNextFunc {
 	return (&proxyPropIter{
-		p:     p,
 		names: p.keys(true, nil),
 	}).next
 }

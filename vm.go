@@ -2646,7 +2646,7 @@ func (s *defineSetter) exec(vm *vm) {
 	descr := PropertyDescriptor{
 		Setter:       val,
 		Configurable: FLAG_TRUE,
-		Enumerable:   FLAG_TRUE,
+		Enumerable:   ToFlag(s.enumerable),
 	}
 
 	obj.defineOwnProperty(propName, descr, true)
@@ -4170,18 +4170,7 @@ func (n *loadModulePromise) exec(vm *vm) {
 }
 
 type newModule struct {
-	moduleCore ModuleRecord
 	newAsyncFunc
-}
-
-func (n *newModule) exec(vm *vm) {
-	obj := vm.r.newAsyncFunc(n.name, n.length, n.strict)
-	obj.prg = n.prg
-	obj.stash = vm.stash
-	obj.privEnv = vm.privEnv
-	obj.src = n.source
-	vm.push(obj.val)
-	vm.pc++
 }
 
 type setModulePromise struct {
@@ -5728,7 +5717,6 @@ type newDerivedClass struct {
 func (vm *vm) createPrivateType(f *classFuncObject, numFields, numMethods uint32) {
 	typ := &privateEnvType{}
 	typ.numFields = numFields
-	typ.numMethods = numMethods
 	f.privateEnvType = typ
 	f.privateMethods = make([]Value, numMethods)
 }
