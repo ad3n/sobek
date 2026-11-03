@@ -14,7 +14,7 @@ ESM module support exists but is experimental. It requires the embedder to provi
 
 Strings use a custom internal representation to handle UTF-16 semantics on top of Go's UTF-8 strings. Conversion between the two is lossy for lone surrogates.
 
-Regex patterns fall back to a third-party engine when Go's stdlib regex cannot handle the pattern (lookbehind, backreferences, etc.).
+Sobek compiles all JavaScript regular expressions directly with `github.com/ad3n/regexp2/v2` in ECMAScript mode.
 
 The promise job queue drains synchronously when the top-level script function returns. On interrupt, the queue is discarded without running pending jobs.
 
