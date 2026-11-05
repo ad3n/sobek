@@ -185,20 +185,20 @@ type RandSource func() float64
 type Now func() time.Time
 
 type Runtime struct {
-	global          global
+	fieldNameMapper FieldNameMapper
+
+	asyncContextTracker AsyncContextTracker
+
 	globalObject    *Object
 	stringSingleton *stringObject
 	rand            RandSource
 	now             Now
 	_collator       *collate.Collator
-	parserOptions   []parser.Option
 
 	symbolRegistry map[unistring.String]*Symbol
 
 	fieldsInfoCache  map[reflect.Type]*reflectFieldsInfo
 	methodsInfoCache map[reflect.Type]*reflectMethodsInfo
-
-	fieldNameMapper FieldNameMapper
 
 	vm   *vm
 	hash *maphash.Hash
@@ -212,14 +212,15 @@ type Runtime struct {
 	importModuleDynamically ImportModuleDynamicallyCallback
 	evaluationState         *evaluationState
 
-	jobQueue []func()
-
 	promiseRejectionTracker PromiseRejectionTracker
-	asyncContextTracker     AsyncContextTracker
+	parserOptions           []parser.Option
+
+	jobQueue []func()
 
 	// Stack for tracking objects currently being converted to string
 	// to detect and handle circular references
 	toStringStack []*Object
+	global        global
 }
 
 type StackFrame struct {

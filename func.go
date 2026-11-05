@@ -59,9 +59,8 @@ type funcObjectImpl interface {
 }
 
 type baseFuncObject struct {
-	baseObject
-
 	lenProp valueProperty
+	baseObject
 }
 
 type baseJsFuncObject struct {
@@ -122,10 +121,9 @@ type asyncArrowFuncObject struct {
 }
 
 type nativeFuncObject struct {
-	baseFuncObject
-
 	f         func(FunctionCall) Value
 	construct func(args []Value, newTarget *Object) *Object
+	baseFuncObject
 }
 
 // iteratorNextFunction contains a special shortcut which can be used to get the next iterator result without

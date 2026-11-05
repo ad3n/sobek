@@ -22,8 +22,9 @@ type objectTemplate struct {
 }
 
 type templatedObject struct {
-	baseObject
 	tmpl *objectTemplate
+
+	baseObject
 
 	protoMaterialised bool
 }

@@ -242,13 +242,13 @@ type baseObject struct {
 }
 
 type guardedObject struct {
-	baseObject
 	guardedProps map[unistring.String]struct{}
+	baseObject
 }
 
 type primitiveValueObject struct {
-	baseObject
 	pValue Value
+	baseObject
 }
 
 func (o *primitiveValueObject) export(*objectExportCtx) any {

@@ -856,9 +856,9 @@ func (r *Runtime) createRegExpStringIterator(matcher *Object, s String, global, 
 }
 
 type regExpStringIterObject struct {
+	s       String
+	matcher *Object
 	baseObject
-	matcher                   *Object
-	s                         String
 	global, fullUnicode, done bool
 }
 

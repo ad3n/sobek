@@ -102,8 +102,6 @@ func copyReflectValueWrapper(w reflectValueWrapper) {
 }
 
 type objectGoReflect struct {
-	baseObject
-
 	fieldsInfo  *reflectFieldsInfo
 	methodsInfo *reflectMethodsInfo
 
@@ -115,6 +113,7 @@ type objectGoReflect struct {
 	origValue, fieldsValue reflect.Value
 
 	methodsValue reflect.Value
+	baseObject
 }
 
 func (o *objectGoReflect) init() {

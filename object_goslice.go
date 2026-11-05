@@ -10,10 +10,10 @@ import (
 )
 
 type objectGoSlice struct {
-	baseObject
 	data       *[]any
 	lengthProp valueProperty
-	origIsPtr  bool
+	baseObject
+	origIsPtr bool
 }
 
 func (r *Runtime) newObjectGoSlice(data *[]any, isPtr bool) *objectGoSlice {

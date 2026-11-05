@@ -83,9 +83,10 @@ func (p *regexpPattern) clone() *regexpPattern {
 }
 
 type regexpObject struct {
-	baseObject
+	source String
+
 	pattern *regexpPattern
-	source  String
+	baseObject
 
 	standard bool
 }

@@ -8,8 +8,8 @@ type argumentsObject struct {
 }
 
 type mappedProperty struct {
-	valueProperty
 	v *Value
+	valueProperty
 }
 
 // Mapped argument properties are stored in the values map as *mappedProperty which is neither a

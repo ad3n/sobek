@@ -28,8 +28,8 @@ var (
 type typedArrayObjectCtor func(buf *arrayBufferObject, offset, length int, proto *Object) *typedArrayObject
 
 type arrayBufferObject struct {
+	data []byte
 	baseObject
-	data     []byte
 	detached bool
 }
 
@@ -41,8 +41,8 @@ type ArrayBuffer struct {
 }
 
 type dataViewObject struct {
+	viewedArrayBuf *arrayBufferObject
 	baseObject
-	viewedArrayBuf      *arrayBufferObject
 	byteLen, byteOffset int
 }
 
@@ -79,10 +79,10 @@ type bigInt64Array []byte
 type bigUint64Array []byte
 
 type typedArrayObject struct {
-	baseObject
 	typedArray     typedArray
 	viewedArrayBuf *arrayBufferObject
 	defaultCtor    *Object
+	baseObject
 	length, offset int
 	elemSize       int
 }

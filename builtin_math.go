@@ -6,6 +6,39 @@ import (
 	"sync"
 )
 
+const mathHypotPoolLimit = 4096
+
+const (
+	sumPreciseMinusZero sumPreciseState = iota
+	sumPreciseFinite
+	sumPrecisePlusInfinity
+	sumPreciseMinusInfinity
+	sumPreciseNaN
+)
+
+var (
+	mathTemplate     *objectTemplate
+	mathTemplateOnce sync.Once
+	mathHypotPool    = sync.Pool{New: func() any { return new([]float64) }}
+)
+
+type (
+	sumPreciseState uint8
+
+	exactSum struct {
+		partials []float64
+		overflow int64
+	}
+)
+
+func releaseMathHypotScratch(scratch *[]float64) {
+	if cap(*scratch) > mathHypotPoolLimit {
+		*scratch = nil
+	}
+
+	mathHypotPool.Put(scratch)
+}
+
 func (r *Runtime) math_abs(call FunctionCall) Value {
 	return floatToValue(math.Abs(call.Argument(0).ToFloat()))
 }
@@ -82,33 +115,69 @@ func (r *Runtime) math_fround(call FunctionCall) Value {
 }
 
 func (r *Runtime) math_hypot(call FunctionCall) Value {
+	if len(call.Arguments) == 2 {
+		x := math.Abs(nilSafe(call.Arguments[0]).ToFloat())
+		y := math.Abs(nilSafe(call.Arguments[1]).ToFloat())
+		if math.IsInf(x, 1) || math.IsInf(y, 1) {
+			return _positiveInf
+		}
+
+		max := math.Max(x, y)
+		if max == 0 {
+			return _positiveZero
+		}
+
+		x /= max
+		y /= max
+		return floatToValue(math.Sqrt(x*x+y*y) * max)
+	}
+
+	if len(call.Arguments) <= 32 {
+		var local [32]float64
+		return mathHypot(call.Arguments, local[:0])
+	}
+
+	scratch := mathHypotPool.Get().(*[]float64)
+	defer releaseMathHypotScratch(scratch)
+
+	if cap(*scratch) < len(call.Arguments) {
+		*scratch = make([]float64, len(call.Arguments))
+	}
+
+	return mathHypot(call.Arguments, (*scratch)[:0])
+}
+
+func mathHypot(args []Value, absValues []float64) Value {
 	var max float64
 	var hasNaN bool
-	absValues := make([]float64, 0, len(call.Arguments))
-	for _, v := range call.Arguments {
+
+	for _, v := range args {
 		arg := nilSafe(v).ToFloat()
 		if math.IsNaN(arg) {
 			hasNaN = true
-		} else {
-			abs := math.Abs(arg)
-			if abs > max {
-				max = abs
-			}
-			absValues = append(absValues, abs)
+			continue
 		}
+
+		abs := math.Abs(arg)
+		if abs > max {
+			max = abs
+		}
+
+		absValues = append(absValues, abs)
 	}
+
 	if math.IsInf(max, 1) {
 		return _positiveInf
 	}
+
 	if hasNaN {
 		return _NaN
 	}
+
 	if max == 0 {
 		return _positiveZero
 	}
 
-	// Kahan summation to avoid rounding errors.
-	// Normalize the numbers to the largest one to avoid overflow.
 	var sum, compensation float64
 	for _, n := range absValues {
 		n /= max
@@ -117,6 +186,7 @@ func (r *Runtime) math_hypot(call FunctionCall) Value {
 		compensation = (preliminary - sum) - summand
 		sum = preliminary
 	}
+
 	return floatToValue(math.Sqrt(sum) * max)
 }
 
@@ -274,16 +344,6 @@ func (r *Runtime) math_sqrt(call FunctionCall) Value {
 	return floatToValue(math.Sqrt(call.Argument(0).ToFloat()))
 }
 
-type sumPreciseState uint8
-
-const (
-	sumPreciseMinusZero sumPreciseState = iota
-	sumPreciseFinite
-	sumPrecisePlusInfinity
-	sumPreciseMinusInfinity
-	sumPreciseNaN
-)
-
 func (r *Runtime) math_sumPrecise(call FunctionCall) Value {
 	items := call.Argument(0)
 	r.checkObjectCoercible(items)
@@ -338,14 +398,6 @@ func (r *Runtime) math_sumPrecise(call FunctionCall) Value {
 		return _negativeZero
 	}
 	return floatToValue(sum.value())
-}
-
-// exactSum keeps the exact sum of finite float64 values as a list of non-overlapping partials
-// (Shewchuk's algorithm, as used by Python's math.fsum). To avoid intermediate overflow, multiples
-// of 2**1024 are kept separately in overflow.
-type exactSum struct {
-	partials []float64
-	overflow int64
 }
 
 // fastTwoSum returns x+y rounded to float64 and the rounding error. It requires |x| >= |y|.
@@ -520,9 +572,6 @@ func createMathTemplate() *objectTemplate {
 
 	return t
 }
-
-var mathTemplate *objectTemplate
-var mathTemplateOnce sync.Once
 
 func getMathTemplate() *objectTemplate {
 	mathTemplateOnce.Do(func() {

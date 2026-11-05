@@ -50,8 +50,8 @@ const (
 
 // An Error represents a parsing error. It includes the position where the error occurred and a message/description.
 type Error struct {
-	Message string
 	File    *file.File
+	Message string
 	Offset  int
 }
 

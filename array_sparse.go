@@ -18,9 +18,9 @@ type sparseArrayItem struct {
 }
 
 type sparseArrayObject struct {
+	lengthProp valueProperty
+	items      []sparseArrayItem
 	baseObject
-	lengthProp     valueProperty
-	items          []sparseArrayItem
 	propValueCount int
 	length         uint32
 }

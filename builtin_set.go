@@ -8,13 +8,13 @@ import (
 var setExportType = reflectTypeArray
 
 type setObject struct {
-	baseObject
 	m *orderedMap
+	baseObject
 }
 
 type setIterObject struct {
-	baseObject
 	iter *orderedMapIter
+	baseObject
 	kind iterationKind
 }
 

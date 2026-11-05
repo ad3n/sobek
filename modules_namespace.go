@@ -7,10 +7,10 @@ import (
 )
 
 type namespaceObject struct {
-	baseObject
 	m            ModuleRecord
 	exports      map[unistring.String]struct{}
 	exportsNames []unistring.String
+	baseObject
 }
 
 func (r *Runtime) NamespaceObjectFor(m ModuleRecord) *Object {

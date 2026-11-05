@@ -5,8 +5,8 @@ import "github.com/ad3n/sobek/unistring"
 const propNameStack = "stack"
 
 type errorObject struct {
+	stack []StackFrame
 	baseObject
-	stack          []StackFrame
 	stackPropAdded bool
 }
 

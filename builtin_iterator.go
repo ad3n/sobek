@@ -19,11 +19,11 @@ const (
 // iteratorHelperObject is the object returned by the lazy Iterator.prototype methods (map, filter, take, drop
 // and flatMap). It behaves like a generator: step produces the next value, or reports that the helper is done.
 type iteratorHelperObject struct {
-	baseObject
 	underlying *iteratorRecord
 	step       func() (value Value, ok bool)
 	// abort, if set, replaces the default closing of the underlying iterator in return().
 	abort func()
+	baseObject
 	state iteratorHelperState
 }
 
@@ -86,8 +86,8 @@ func (h *iteratorHelperObject) _return() Value {
 // wrapForValidIteratorObject is the object returned by Iterator.from() for iterators that do not inherit from
 // Iterator.prototype.
 type wrapForValidIteratorObject struct {
-	baseObject
 	iterated *iteratorRecord
+	baseObject
 }
 
 func (r *Runtime) newIteratorHelper(underlying *iteratorRecord, step func() (Value, bool)) *iteratorHelperObject {

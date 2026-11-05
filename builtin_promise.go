@@ -55,12 +55,12 @@ var typePromise = reflect.TypeFor[*Promise]()
 //
 // WARNING: Instances of Promise are not goroutine-safe. See Runtime.NewPromise() for more details.
 type Promise struct {
-	baseObject
 	result           Value
 	fulfillReactions []*promiseReaction
 	rejectReactions  []*promiseReaction
-	state            PromiseState
-	handled          bool
+	baseObject
+	state   PromiseState
+	handled bool
 }
 
 func (p *Promise) State() PromiseState {

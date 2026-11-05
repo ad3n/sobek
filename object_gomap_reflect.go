@@ -8,9 +8,8 @@ import (
 )
 
 type objectGoMapReflect struct {
-	objectGoReflect
-
 	keyType, valueType reflect.Type
+	objectGoReflect
 }
 
 func (o *objectGoMapReflect) init() {

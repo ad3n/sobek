@@ -16,10 +16,27 @@ import (
 	"github.com/ad3n/sobek/unistring"
 )
 
-const hex = "0123456789abcdef"
+const (
+	hex                 = "0123456789abcdef"
+	jsonPoolBufferLimit = 64 * 1024
+	jsonPoolStackLimit  = 1024
+)
 
-var jsonTemplate *objectTemplate
-var jsonTemplateOnce sync.Once
+var (
+	jsonTemplate      *objectTemplate
+	jsonTemplateOnce  sync.Once
+	jsonStringifyPool = sync.Pool{New: func() any { return new(_builtinJSON_stringifyContext) }}
+)
+
+type _builtinJSON_stringifyContext struct {
+	r                *Runtime
+	stack            []*Object
+	propertyList     []Value
+	replacerFunction func(FunctionCall) Value
+	gap, indent      string
+	buf              bytes.Buffer
+	allAscii         bool
+}
 
 func getJSONTemplate() *objectTemplate {
 	jsonTemplateOnce.Do(func() {
@@ -187,21 +204,28 @@ func (r *Runtime) builtinJSON_reviveWalk(reviver func(FunctionCall) Value, holde
 	})
 }
 
-type _builtinJSON_stringifyContext struct {
-	r                *Runtime
-	stack            []*Object
-	propertyList     []Value
-	replacerFunction func(FunctionCall) Value
-	gap, indent      string
-	buf              bytes.Buffer
-	allAscii         bool
+func (ctx *_builtinJSON_stringifyContext) release() {
+	buf := ctx.buf
+	if buf.Cap() > jsonPoolBufferLimit {
+		buf = bytes.Buffer{}
+	}
+
+	buf.Reset()
+	stack := ctx.stack
+	clear(stack[:cap(stack)])
+	if cap(stack) > jsonPoolStackLimit {
+		stack = nil
+	}
+
+	*ctx = _builtinJSON_stringifyContext{buf: buf, stack: stack[:0]}
+	jsonStringifyPool.Put(ctx)
 }
 
 func (r *Runtime) builtinJSON_stringify(call FunctionCall) Value {
-	ctx := _builtinJSON_stringifyContext{
-		r:        r,
-		allAscii: true,
-	}
+	ctx := jsonStringifyPool.Get().(*_builtinJSON_stringifyContext)
+	ctx.r = r
+	ctx.allAscii = true
+	defer ctx.release()
 
 	replacer, _ := call.Argument(1).(*Object)
 	if replacer != nil {
@@ -507,6 +531,11 @@ func (ctx *_builtinJSON_stringifyContext) jo(object *Object) {
 }
 
 func (ctx *_builtinJSON_stringifyContext) quote(str String) {
+	if ascii, ok := str.(asciiString); ok {
+		ctx.quoteASCII(ascii)
+		return
+	}
+
 	ctx.buf.WriteByte('"')
 	reader := &lenientUtf16Decoder{utf16Reader: str.utf16Reader()}
 	for {
@@ -602,4 +631,41 @@ func (r *Runtime) getJSON() *Object {
 	}
 
 	return r.global.JSON
+}
+
+func (ctx *_builtinJSON_stringifyContext) quoteASCII(str asciiString) {
+	ctx.buf.WriteByte('"')
+	start := 0
+	for i := 0; i < len(str); i++ {
+		c := str[i]
+		if c >= 0x20 && c != '"' && c != '\\' {
+			continue
+		}
+
+		ctx.buf.WriteString(string(str[start:i]))
+		switch c {
+		case '"', '\\':
+			ctx.buf.WriteByte('\\')
+			ctx.buf.WriteByte(c)
+		case '\b':
+			ctx.buf.WriteString(`\b`)
+		case '\t':
+			ctx.buf.WriteString(`\t`)
+		case '\n':
+			ctx.buf.WriteString(`\n`)
+		case '\f':
+			ctx.buf.WriteString(`\f`)
+		case '\r':
+			ctx.buf.WriteString(`\r`)
+		default:
+			ctx.buf.WriteString(`\u00`)
+			ctx.buf.WriteByte(hex[c>>4])
+			ctx.buf.WriteByte(hex[c&0xf])
+		}
+
+		start = i + 1
+	}
+
+	ctx.buf.WriteString(string(str[start:]))
+	ctx.buf.WriteByte('"')
 }

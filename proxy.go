@@ -294,11 +294,11 @@ func (h *jsProxyHandler) construct(target *Object, args []Value, newTarget *Obje
 }
 
 type proxyObject struct {
-	baseObject
-	target  *Object
 	handler proxyHandler
+	target  *Object
 	call    func(FunctionCall) Value
 	ctor    func(args []Value, newTarget *Object) *Object
+	baseObject
 }
 
 func (p *proxyObject) checkHandler() proxyHandler {

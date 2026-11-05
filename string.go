@@ -73,8 +73,8 @@ type String interface {
 }
 
 type stringIterObject struct {
-	baseObject
 	reader io.RuneReader
+	baseObject
 }
 
 func isUTF16FirstSurrogate(c uint16) bool {
@@ -130,10 +130,10 @@ func (r *Runtime) createStringIterator(s String) Value {
 }
 
 type stringObject struct {
-	baseObject
-	lengthProp valueProperty
 	value      String
-	length     int
+	lengthProp valueProperty
+	baseObject
+	length int
 }
 
 func newStringValue(s string) String {
