@@ -96,9 +96,10 @@ type (
 	}
 
 	AssignExpression struct {
-		Left     Expression
-		Right    Expression
-		Operator token.Token
+		Left              Expression
+		Right             Expression
+		Operator          token.Token
+		ParenthesizedLeft bool
 	}
 
 	BadExpression struct {

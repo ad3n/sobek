@@ -76,6 +76,7 @@ type global struct {
 	Int16Array        *Object
 	Uint32Array       *Object
 	Int32Array        *Object
+	Float16Array      *Object
 	Float32Array      *Object
 	Float64Array      *Object
 	BigInt64Array     *Object
@@ -1218,6 +1219,10 @@ func toUint(v Value) uint {
 	return 0
 }
 
+func toFloat16Bits(v Value) uint16 {
+	return Float64ToFloat16(v.ToFloat())
+}
+
 func toFloat32(v Value) float32 {
 	return float32(v.ToFloat())
 }
@@ -1376,10 +1381,14 @@ func MustCompile(name, src string, strict bool) *Program {
 func Parse(name, src string, options ...parser.Option) (prg *js_ast.Program, err error) {
 	prg, err1 := parser.ParseFile(nil, name, src, 0, options...)
 	if err1 != nil {
-		// FIXME offset
-		err = &CompilerSyntaxError{
-			Message: err1.Error(),
+		e := &CompilerSyntaxError{Message: err1.Error()}
+		var list parser.ErrorList
+		if errors.As(err1, &list) && len(list) > 0 {
+			e.Message = list[0].Message
+			e.File = list[0].File
+			e.Offset = list[0].Offset
 		}
+		err = e
 	}
 	return
 }
@@ -2513,7 +2522,7 @@ func AssertFunction(v Value) (Callable, bool) {
 			return func(this Value, args ...Value) (ret Value, err error) {
 				err = obj.runtime.runWrapped(func() {
 					ret = f(FunctionCall{
-						This:      this,
+						This:      nilSafe(this),
 						Arguments: args,
 					})
 				})
@@ -3142,7 +3151,7 @@ func (r *Runtime) trackPromiseRejection(p *Promise, operation PromiseRejectionOp
 }
 
 func (r *Runtime) callJobCallback(job *jobCallback, this Value, args ...Value) Value {
-	return job.callback(FunctionCall{This: this, Arguments: args})
+	return job.callback(FunctionCall{This: nilSafe(this), Arguments: args})
 }
 
 func (r *Runtime) invoke(v Value, p unistring.String, args ...Value) Value {
@@ -3226,6 +3235,9 @@ func strToInt32(s unistring.String) (int32, bool) {
 		s = s[1:]
 	}
 	l := len(s)
+	if l == 0 {
+		return -1, false
+	}
 	if s[0] == '0' {
 		if l == 1 {
 			return 0, !neg
@@ -3283,6 +3295,9 @@ func strToInt64(s unistring.String) (int64, bool) {
 		s = s[1:]
 	}
 	l := len(s)
+	if l == 0 {
+		return -1, false
+	}
 	if s[0] == '0' {
 		if l == 1 {
 			return 0, !neg
