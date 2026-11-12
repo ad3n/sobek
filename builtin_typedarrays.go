@@ -1,7 +1,6 @@
 package sobek
 
 import (
-	stdbase64 "encoding/base64"
 	stdhex "encoding/hex"
 	"errors"
 	"fmt"
@@ -12,6 +11,7 @@ import (
 	"unsafe"
 
 	"github.com/ad3n/sobek/unistring"
+	asmbase64 "github.com/segmentio/asm/base64"
 )
 
 type typedArraySortCtx struct {
@@ -1727,48 +1727,47 @@ func (r *Runtime) uint8ArrayProto_toBase64(call FunctionCall) Value {
 	return asciiString(unsafe.String(unsafe.SliceData(buf), len(buf)))
 }
 
-// parseToBase64Encoding reads the "alphabet" and "omitPadding" options of
-// Uint8Array.prototype.toBase64(section 3. to 10.) and returns the encoding they select:
-// the base64 encoding of section 4 of RFC 4648, or the base64url encoding of section 5.
-func (r *Runtime) parseToBase64Encoding(options Value) *stdbase64.Encoding {
-	// The defaults are "base64" and omitPadding false.
+func (r *Runtime) parseToBase64Encoding(options Value) *asmbase64.Encoding {
 	if options == nil || options == _undefined {
-		return stdbase64.StdEncoding
+		return asmbase64.StdEncoding
 	}
-	// 3. Let opts be ? GetOptionsObject(options).
+
 	opts, ok := options.(*Object)
 	if !ok {
 		panic(r.NewTypeError("Options is not an object"))
 	}
-	// 4. Let alphabet be ? Get(opts, "alphabet").
+
 	alphabetVal := nilSafe(opts.self.getStr("alphabet", nil))
-	// 5. If alphabet is undefined, set alphabet to "base64".
 	alphabet := "base64"
 	if alphabetVal != _undefined {
 		str, ok := alphabetVal.(String)
 		if ok {
 			alphabet = str.String()
 		}
-		// 6. If alphabet is neither "base64" nor "base64url", throw a TypeError exception.
+
 		if !ok || (alphabet != "base64" && alphabet != "base64url") {
 			panic(r.NewTypeError(`alphabet must be "base64" or "base64url"`))
 		}
 	}
-	// 7.-8. Let omitPadding be ToBoolean(? Get(opts, "omitPadding")).
+
 	omitPadding := false
 	if v := opts.self.getStr("omitPadding", nil); v != nil {
 		omitPadding = v.ToBoolean()
 	}
+
 	if alphabet == "base64" {
 		if omitPadding {
-			return stdbase64.RawStdEncoding
+			return asmbase64.RawStdEncoding
 		}
-		return stdbase64.StdEncoding
+
+		return asmbase64.StdEncoding
 	}
+
 	if omitPadding {
-		return stdbase64.RawURLEncoding
+		return asmbase64.RawURLEncoding
 	}
-	return stdbase64.URLEncoding
+
+	return asmbase64.URLEncoding
 }
 
 func (r *Runtime) uint8ArrayProto_toHex(call FunctionCall) Value {

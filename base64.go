@@ -134,13 +134,11 @@ func fromBase64(s String, decodeMap *[256]byte, lastChunkHandling base64LastChun
 	return read, dst[:written], err
 }
 
-// Decode a base64-encoded ASCII string.
-// The fast case algorithm is borrowed from the standard Go encoding/base64.
 func base64DecodeAscii(a asciiString, s String, decodeMap *[256]byte, lastChunkHandling base64LastChunkHandling, dst []byte) (read, written int, err error) {
-	// Lift the nil check outside of the loop. decodeMap is directly
-	// used later in this function, to let the compiler know that the
-	// receiver can't be nil.
 	_ = *decodeMap
+	if len(a) > 256 && len(dst) >= 192 && decodeMap[a[0]] != 0xff {
+		read, written = base64DecodeSIMD(a, decodeMap, dst)
+	}
 
 	for strconv.IntSize >= 64 && len(a)-read >= 8 && len(dst)-written >= 6 {
 		src2 := a[read : read+8]
