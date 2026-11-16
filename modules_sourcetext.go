@@ -665,6 +665,10 @@ func (module *SourceTextModuleRecord) ResolveExport(exportName string, resolvese
 }
 
 func (module *SourceTextModuleRecord) Instantiate(rt *Runtime) (CyclicModuleInstance, error) {
+	if module.p == nil {
+		return nil, fmt.Errorf("module must be linked before evaluation")
+	}
+
 	mi := &SourceTextModuleInstance{
 		moduleRecord:  module,
 		exportGetters: make(map[string]func() Value),
