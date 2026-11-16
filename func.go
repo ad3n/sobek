@@ -64,13 +64,13 @@ type baseFuncObject struct {
 }
 
 type baseJsFuncObject struct {
-	baseFuncObject
-
 	stash   *stash
 	privEnv *privateEnv
 
-	prg    *Program
-	src    string
+	prg *Program
+	src string
+	baseFuncObject
+
 	strict bool
 }
 
@@ -129,18 +129,18 @@ type nativeFuncObject struct {
 // iteratorNextFunction contains a special shortcut which can be used to get the next iterator result without
 // creating an IteratorResult object. This saves memory for for-of loops.
 type iteratorNextFunction struct {
-	nativeFuncObject
 	getNextResult func(this *Object) func(Value) (Value, bool)
+	nativeFuncObject
 }
 
 type wrappedFuncObject struct {
-	nativeFuncObject
 	wrapped reflect.Value
+	nativeFuncObject
 }
 
 type boundFuncObject struct {
-	nativeFuncObject
 	wrapped *Object
+	nativeFuncObject
 }
 
 type generatorState uint8
