@@ -755,18 +755,6 @@ func (r *Runtime) getObject() *Object {
 	return ret
 }
 
-/*
-func (r *Runtime) getObjectPrototype() *Object {
-	ret := r.global.ObjectPrototype
-	if ret == nil {
-		ret = &Object{runtime: r}
-		r.global.ObjectPrototype = ret
-		r.newTemplatedObject(getObjectProtoTemplate(), ret)
-	}
-	return ret
-}
-*/
-
 var objectProtoTemplate *objectTemplate
 var objectProtoTemplateOnce sync.Once
 
