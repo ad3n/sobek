@@ -113,8 +113,9 @@ func TestParserErr(t *testing.T) {
     `, "(anonymous): Line 3:9 Illegal break statement")
 		{
 			stmt := program.Body[1].(*ast.BadStatement)
-			is(parser.position(stmt.From).Column, 9)
-			is(parser.position(stmt.To).Column, 16)
+			base := program.File.Base()
+			is(program.File.Position(int(stmt.From)-base).Column, 9)
+			is(program.File.Position(int(stmt.To)-base).Column, 16)
 			is(parser.slice(stmt.From, stmt.To), "break; ")
 		}
 

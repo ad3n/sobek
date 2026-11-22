@@ -290,7 +290,3 @@ func (self *_parser) expect(value token.Token) file.Idx {
 	self.next()
 	return idx
 }
-
-func (self *_parser) position(idx file.Idx) file.Position {
-	return self.file.Position(int(idx) - self.base)
-}

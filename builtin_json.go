@@ -314,15 +314,21 @@ func (r *Runtime) builtinJSON_stringify(call FunctionCall) Value {
 	return _undefined
 }
 
-func (ctx *_builtinJSON_stringifyContext) do(v Value) bool {
+func (ctx *_builtinJSON_stringifyContext) do(value Value) bool {
+	if ctx.replacerFunction == nil {
+		return ctx.strValue(stringEmpty, nil, nilSafe(value))
+	}
+
 	holder := ctx.r.NewObject()
-	createDataPropertyOrThrow(holder, stringEmpty, v)
+	createDataPropertyOrThrow(holder, stringEmpty, value)
 	return ctx.str(stringEmpty, holder)
 }
 
 func (ctx *_builtinJSON_stringifyContext) str(key Value, holder *Object) bool {
-	value := nilSafe(holder.get(key, nil))
+	return ctx.strValue(key, holder, nilSafe(holder.get(key, nil)))
+}
 
+func (ctx *_builtinJSON_stringifyContext) strValue(key Value, holder *Object, value Value) bool {
 	switch value.(type) {
 	case *Object, *valueBigInt:
 		if toJSON, ok := ctx.r.getVStr(value, "toJSON").(*Object); ok {
